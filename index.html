@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Event Management (EM) Pro v3</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Шрифты Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-zinc-100 text-stone-850 flex flex-col min-h-screen pb-28 select-none">
+
+    <!-- ХЕДЕР С АДАПТИВНЫМ МЕНЮ ДЛЯ ПК (ОСТРОВОК) -->
+    <header class="glass-panel-dark text-amber-50 island-card mx-4 my-4 sticky top-4 z-30 px-5 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 border border-emerald-900/40">
+        <div class="flex items-center justify-between w-full md:w-auto">
+            <div>
+                <span class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold block" id="header-subtitle">Система планирования мероприятий</span>
+                <h1 class="text-xl font-bold serif-title tracking-wide flex items-center gap-2">
+                    <i data-lucide="gem" class="w-5 h-5 text-amber-400"></i>
+                    Event Management (EM)
+                </h1>
+            </div>
+            <!-- Мобильный индикатор -->
+            <div class="text-right md:hidden">
+                <span class="text-xl font-bold text-amber-400" id="header-seated-count">0/0</span>
+                <span class="text-[9px] text-emerald-300 block uppercase tracking-wider font-semibold">рассажено</span>
+            </div>
+        </div>
+
+        <!-- Верхнее меню для ПК -->
+        <div class="hidden md:flex items-center gap-1 bg-stone-900/40 p-1 rounded-xl border border-emerald-900/50 flex-wrap">
+            <button onclick="switchTab('profile')" id="pc-btn-tab-profile" class="px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-300 hover:text-white">
+                <i data-lucide="home" class="w-4 h-4"></i> Главная
+            </button>
+            <button onclick="switchTab('guests')" id="pc-btn-tab-guests" class="px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-300 hover:text-white">
+                <i data-lucide="users" class="w-4 h-4"></i> Гости
+            </button>
+            <button onclick="switchTab('tables')" id="pc-btn-tab-tables" class="px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-300 hover:text-white">
+                <i data-lucide="armchair" class="w-4 h-4"></i> Столы
+            </button>
+            <button onclick="switchTab('schema')" id="pc-btn-tab-schema" class="px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-300 hover:text-white">
+                <i data-lucide="map" class="w-4 h-4"></i> Схема зала
+            </button>
+            <button onclick="switchTab('finance')" id="pc-btn-tab-finance" class="px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-300 hover:text-white">
+                <i data-lucide="dollar-sign" class="w-4 h-4"></i> Финансы
+            </button>
+        </div>
+
+        <!-- Счётчик для ПК -->
+        <div class="hidden md:flex items-center gap-4">
+            <div class="text-right border-l border-emerald-900/80 pl-4">
+                <span class="text-xl font-extrabold text-amber-400" id="pc-header-seated-count">0/0</span>
+                <span class="text-[9px] text-emerald-300 block uppercase tracking-wider font-bold">рассажено гостей</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ГЛАВНЫЙ КОНТЕНТ -->
+    <main class="flex-1 max-w-md md:max-w-6xl w-full mx-auto px-4 py-2 space-y-4 animate-fadeIn">
+
+        <!-- ВКЛАДКА 0: ГЛАВНАЯ (ПРОФИЛЬ, АНАЛИТИКА, НАСТРОЙКИ БД) -->
+        <section id="tab-profile" class="tab-content space-y-4">
+            
+            <!-- Суб-переключатель внутри Главной -->
+            <div class="flex justify-center">
+                <div class="inline-flex bg-stone-100 p-1 rounded-2xl shadow-xs border border-stone-200/60 max-w-xs md:max-w-md w-full justify-between gap-1">
+                    <button type="button" onclick="switchMainSubTab('profile')" id="subtab-btn-profile" class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200">
+                        <i data-lucide="info" class="w-3.5 h-3.5 inline mr-1"></i>Сведения
+                    </button>
+                    <button type="button" onclick="switchMainSubTab('stats')" id="subtab-btn-stats" class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200">
+                        <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 inline mr-1"></i>Аналитика
+                    </button>
+                    <button type="button" onclick="switchMainSubTab('database')" id="subtab-btn-database" class="flex-1 text-center py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200">
+                        <i data-lucide="database" class="w-3.5 h-3.5 inline mr-1"></i>Данные
+                    </button>
+                </div>
+            </div>
+
+            <!-- СУБ-ВКЛАДКА 1: СВЕДЕНИЯ / ПРОФИЛЬ -->
+            <div id="main-subtab-profile" class="main-subtab-content space-y-4">
+                
+                <!-- РЕЖИМ ПРОСМОТРА (VIEW MODE) -->
+                <div id="profile-view-mode" class="space-y-4">
+                    <!-- Красивый заглавный баннер с изумрудно-золотым градиентом -->
+                    <div class="bg-gradient-to-r from-emerald-950 to-emerald-800 text-amber-50 rounded-3xl p-6 shadow-md border border-emerald-900/40 relative overflow-hidden">
+                        <div class="absolute right-[-20px] bottom-[-20px] opacity-10 text-white">
+                            <i data-lucide="gem" class="w-40 h-40"></i>
+                        </div>
+                        <div class="relative z-10 space-y-2">
+                            <span class="text-[9px] uppercase tracking-widest text-emerald-300 font-bold bg-stone-900/40 px-2.5 py-1 rounded-full border border-emerald-800/60 inline-block" id="profile-view-badge">✨ Торжество</span>
+                            <h2 class="text-2xl font-bold serif-title tracking-wide text-white leading-tight" id="profile-view-title">Название мероприятия</h2>
+                            <p class="text-xs text-emerald-200/90 font-medium flex items-center gap-1.5" id="profile-view-date-time">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                                <span>Дата и время проведения</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Сетка параметров -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Место проведения -->
+                        <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 flex flex-col justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div class="bg-stone-50 text-stone-600 p-2.5 rounded-xl border border-stone-200 shrink-0">
+                                    <i data-lucide="map-pin" class="w-4.5 h-4.5 text-stone-500"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Место проведения</span>
+                                    <span class="text-sm font-extrabold text-stone-900 block truncate mt-0.5" id="profile-view-venue">Не указано</span>
+                                </div>
+                            </div>
+                            <div id="profile-view-map-wrap" class="w-full"></div>
+                        </div>
+
+                        <!-- Бюджет и Валюта -->
+                        <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 flex items-start gap-3">
+                            <div class="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-100 shrink-0">
+                                <i data-lucide="dollar-sign" class="w-4.5 h-4.5 text-emerald-700"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Планируемый бюджет</span>
+                                <span class="text-sm font-extrabold text-stone-900 block mt-0.5" id="profile-view-budget">0 KGS</span>
+                                <span class="text-[9px] font-bold text-stone-400 block mt-1" id="profile-view-avg-gift">Средний подарок: 0 KGS</span>
+                            </div>
+                        </div>
+
+                        <!-- Статистика гостей -->
+                        <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 flex items-start gap-3">
+                            <div class="bg-amber-50 text-amber-900 p-2.5 rounded-xl border border-amber-100 shrink-0">
+                                <i data-lucide="users" class="w-4.5 h-4.5 text-amber-700"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Статистика гостей</span>
+                                <span class="text-sm font-extrabold text-stone-900 block mt-0.5"><span id="profile-view-guests-count">0</span> / <span id="profile-view-planned-guests">0</span> <span class="text-xs text-stone-400 font-normal">чел (в базе / план)</span></span>
+                                <span class="text-[9px] font-bold text-stone-400 block mt-1" id="profile-view-seated-stats">Рассаживайте гостей во вкладке "Схема"</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Кнопка редактирования -->
+                    <div class="flex justify-center pt-2">
+                        <button type="button" onclick="setProfileEditMode(true)" class="bg-emerald-800 text-white text-xs font-bold py-3 px-6 rounded-2xl flex items-center gap-2 hover:bg-emerald-700 active:scale-95 transition shadow-sm">
+                            <i data-lucide="edit-3" class="w-4 h-4 text-emerald-100"></i>
+                            Редактировать профиль
+                        </button>
+                    </div>
+                </div>
+
+                <!-- РЕЖИМ РЕДАКТИРОВАНИЯ (EDIT MODE) - СКРЫТ ПО УМОЛЧАНИЮ -->
+                <div id="profile-edit-mode" class="bg-white/90 glass-panel island-card p-5 space-y-4 border border-stone-200/50 hidden">
+                    <div class="flex items-center gap-2 border-b border-stone-150 pb-3">
+                        <i data-lucide="user-cog" class="w-5 h-5 text-emerald-800"></i>
+                        <h2 class="text-base font-bold serif-title text-stone-900">Редактирование профиля</h2>
+                    </div>
+
+                    <form id="profile-form" onsubmit="handleSaveProfile(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Название мероприятия -->
+                            <div class="md:col-span-2">
+                                <label class="text-xs font-bold text-stone-500 block mb-1">Название мероприятия</label>
+                                <input type="text" id="profile-event-name" placeholder="Например: Свадьба Кутмана и Асели"
+                                       class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                            </div>
+
+                            <!-- Дата и время -->
+                            <div>
+                                <label class="text-xs font-bold text-stone-500 block mb-1">Дата мероприятия</label>
+                                <input type="date" id="profile-date"
+                                       class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs font-bold text-stone-500 block mb-1">Начало</label>
+                                    <input type="time" id="profile-time-start"
+                                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-stone-500 block mb-1">Конец</label>
+                                    <input type="time" id="profile-time-end"
+                                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                </div>
+                            </div>
+
+                            <!-- Вид мероприятия -->
+                            <div>
+                                <label class="text-xs font-bold text-stone-500 block mb-1">Вид мероприятия</label>
+                                <div class="flex gap-2">
+                                    <select id="profile-event-type"
+                                            class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                    </select>
+                                    <button type="button" onclick="openModal('modal-custom-event-type')" class="bg-stone-100 hover:bg-stone-200 text-stone-700 p-3 rounded-xl border border-stone-200 transition" title="Добавить вид мероприятия">
+                                        <i data-lucide="plus" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Ресторан/Место проведения -->
+                            <div>
+                                <label class="text-xs font-bold text-stone-500 block mb-1">Место проведения (Ресторан / Зал)</label>
+                                <input type="text" id="profile-venue-name" placeholder="Например: Ресторан Ала-Тоо"
+                                       class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                            </div>
+
+                            <!-- Ссылка на 2ГИС -->
+                            <div class="md:col-span-2">
+                                <label class="text-xs font-bold text-stone-500 block mb-1">Ссылка на карту (2ГИС / Google Maps)</label>
+                                <div class="relative">
+                                    <input type="url" id="profile-venue-link" placeholder="https://2gis.kg/..."
+                                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                    <i data-lucide="map-pin" class="absolute left-3.5 top-3.5 w-4 h-4 text-stone-400"></i>
+                                </div>
+                            </div>
+
+                            <!-- Финансовые вводные -->
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs font-bold text-stone-500 block mb-1">Общий бюджет</label>
+                                    <input type="number" id="profile-budget" placeholder="500000"
+                                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-stone-500 block mb-1">Планируемое кол-во гостей</label>
+                                    <input type="number" id="profile-planned-guests" min="0" placeholder="100"
+                                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs font-bold text-stone-500 block mb-1">Валюта</label>
+                                    <select id="profile-currency"
+                                            class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="KGS">KGS (сом)</option>
+                                        <option value="RUB">RUB (₽)</option>
+                                        <option value="USD">USD ($)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-stone-500 block mb-1">Средний подарок гостя</label>
+                                    <input type="number" id="profile-avg-gift" placeholder="3000"
+                                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Кнопки действий -->
+                        <div class="flex gap-3 pt-2 border-t border-stone-100">
+                            <button type="button" onclick="setProfileEditMode(false)" class="w-1/2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                                Отмена
+                            </button>
+                            <button type="submit" class="w-1/2 bg-emerald-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm hover:bg-emerald-700 active:scale-95">
+                                Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- СУБ-ВКЛАДКА 2: АНАЛИТИКА -->
+            <div id="main-subtab-stats" class="main-subtab-content hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Общий прогресс рассадки -->
+                    <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-4 h-fit">
+                        <h2 class="text-sm font-bold text-stone-850 flex items-center gap-2">
+                            <i data-lucide="activity" class="w-4 h-4 text-emerald-800"></i>
+                            Общий прогресс рассадки
+                        </h2>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-emerald-50/70 p-3 rounded-xl border border-emerald-100 text-center">
+                                <span class="text-2xl font-bold text-emerald-900 block" id="stats-seated">0</span>
+                                <span class="text-[10px] text-stone-500 uppercase tracking-wider block font-semibold mt-1">Рассажено</span>
+                            </div>
+                            <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 text-center">
+                                <span class="text-2xl font-bold text-amber-800 block" id="stats-unseated">0</span>
+                                <span class="text-[10px] text-stone-500 uppercase tracking-wider block font-semibold mt-1">Без стола</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between text-xs font-bold text-stone-600">
+                                <span>Заполнение банкетного зала</span>
+                                <span id="stats-percent">0%</span>
+                            </div>
+                            <div class="w-full bg-stone-100 h-3 rounded-full overflow-hidden">
+                                <div id="stats-progress-bar" class="bg-emerald-800 h-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Гости по категориям -->
+                    <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-3 h-fit">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider">Гости по категориям</h3>
+                            <button type="button" onclick="switchTab('guests'); switchGuestsViewMode('categories');" class="text-[10px] font-bold text-emerald-800 flex items-center gap-1">
+                                В список категорий <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </button>
+                        </div>
+                        <div id="stats-categories-distribution" class="space-y-2.5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- СУБ-ВКЛАДКА 3: ДАННЫЕ / НАСТРОЙКИ -->
+            <div id="main-subtab-database" class="main-subtab-content hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Справочник категорий гостей -->
+                    <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-3 h-fit">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider">Категории гостей</h3>
+                            <button type="button" onclick="openCategoryModal()" class="bg-stone-100 text-stone-700 hover:bg-stone-200 text-[10px] font-bold py-1 px-2.5 rounded-lg flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Создать
+                            </button>
+                        </div>
+                        <div id="mini-categories-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 no-scrollbar text-xs"></div>
+                    </div>
+
+                    <!-- Справочник категорий расходов -->
+                    <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-3 h-fit">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider">Категории расходов</h3>
+                            <button type="button" onclick="openExpenseCategoryModal()" class="bg-stone-100 text-stone-700 hover:bg-stone-200 text-[10px] font-bold py-1 px-2.5 rounded-lg flex items-center gap-1">
+                                <i data-lucide="plus" class="w-3 h-3"></i> Создать
+                            </button>
+                        </div>
+                        <div id="mini-expense-categories-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 no-scrollbar text-xs"></div>
+                    </div>
+
+                    <!-- Резервное копирование и экспорт -->
+                    <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-3 h-fit md:col-span-2">
+                        <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <i data-lucide="database" class="w-3.5 h-3.5 text-stone-500"></i> Резервное копирование и экспорт
+                        </h3>
+                        
+                        <p class="text-[10px] text-stone-400 font-semibold leading-normal">
+                            Сохраняйте и загружайте резервные копии проекта в формате JSON. Все гости, столы, категории и ваши точные расстановки столов на карте будут сохранены в один файл.
+                        </p>
+
+                        <div class="space-y-2 pt-1">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" onclick="exportToJSON()" class="bg-emerald-800 text-white hover:bg-emerald-700 text-xs font-bold py-3 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs">
+                                    <i data-lucide="download" class="w-4 h-4"></i> Экспорт JSON
+                                </button>
+                                <button type="button" onclick="document.getElementById('import-file').click()" class="bg-amber-500 text-emerald-950 hover:bg-amber-400 text-xs font-bold py-3 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs">
+                                    <i data-lucide="upload" class="w-4 h-4"></i> Импорт JSON
+                                </button>
+                            </div>
+                            <input type="file" id="import-file" class="hidden" accept=".json" onchange="importFromJSON(event)">
+                        </div>
+
+                        <div class="pt-2 border-t border-stone-100">
+                            <button type="button" onclick="confirmResetData()" class="w-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-bold py-2.5 px-3 rounded-xl transition">
+                                Сбросить всё к демо-версии
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ВКЛАДКА 1: ЖУРНАЛ ГОСТЕЙ -->
+        <section id="tab-guests" class="tab-content hidden space-y-4">
+            <!-- Поиск и фильтры -->
+            <div class="bg-white/90 glass-panel island-card p-3.5 border border-stone-200/50 space-y-3">
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Поиск гостя по имени..." 
+                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    <i data-lucide="search" class="absolute left-3.5 top-3.5 w-4 h-4 text-stone-400"></i>
+                </div>
+                
+                <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <select id="filter-category" class="bg-stone-100/80 text-xs font-semibold text-stone-600 border border-stone-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-700 shrink-0">
+                        <option value="all">Все категории гостей</option>
+                    </select>
+                    
+                    <select id="filter-table" class="bg-stone-100/80 text-xs font-semibold text-stone-600 border border-stone-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-700 shrink-0">
+                        <option value="all">Все столы</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Переключатели подвкладок отображения списка -->
+            <div class="flex bg-white/80 glass-panel p-1 rounded-xl border border-stone-200/50 w-fit gap-1 shadow-sm">
+                <button onclick="switchGuestsViewMode('list')" id="subtab-btn-list" class="px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-sm">
+                    Список
+                </button>
+                <button onclick="switchGuestsViewMode('tables')" id="subtab-btn-tables" class="px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900">
+                    Столы
+                </button>
+                <button onclick="switchGuestsViewMode('categories')" id="subtab-btn-categories" class="px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900">
+                    Категории
+                </button>
+            </div>
+
+            <!-- Заголовок и создание -->
+            <div class="flex justify-between items-center px-1">
+                <div class="text-xs text-stone-500 font-bold uppercase tracking-wider">
+                    Показано гостей: <span id="total-guests-count" class="font-extrabold text-stone-850">0</span>
+                </div>
+                <button onclick="openGuestModal()" class="bg-emerald-800 hover:bg-emerald-700 active:scale-95 transition text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    Новый гость
+                </button>
+            </div>
+
+            <!-- Список Гостей -->
+            <div id="guests-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+            
+            <div id="guests-empty-state" class="hidden text-center py-16 text-stone-400">
+                <i data-lucide="users" class="w-12 h-12 mx-auto mb-3 text-stone-300"></i>
+                <p class="text-sm font-medium">Ни один гость не соответствует фильтрам</p>
+            </div>
+        </section>
+
+        <!-- ВКЛАДКА 2: СПРАВОЧНИК СТОЛОВ -->
+        <section id="tab-tables" class="tab-content hidden space-y-4">
+            <div class="flex justify-between items-center px-1">
+                <h2 class="text-xs text-stone-500 font-bold uppercase tracking-wider">Справочник столов рассадки</h2>
+                <button onclick="openTableModal()" class="bg-emerald-800 hover:bg-emerald-700 active:scale-95 transition text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    Добавить стол
+                </button>
+            </div>
+
+            <p class="text-[10px] text-stone-400 font-semibold bg-white/80 p-2.5 rounded-xl border border-stone-200/50 shadow-xs">
+                💡 Нажмите на карточку любого стола, чтобы открыть детальный список его гостей и управлять быстрой пересадкой.
+            </p>
+
+            <!-- Список столов -->
+            <div id="tables-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            
+            <div id="tables-empty-state" class="hidden text-center py-16 text-stone-400">
+                <i data-lucide="grid" class="w-12 h-12 mx-auto mb-3 text-stone-300"></i>
+                <p class="text-sm font-medium">В справочнике пока нет столов</p>
+            </div>
+        </section>
+
+        <!-- ВКЛАДКА 3: СХЕМА ЗАЛА (CANVAS С БЕСШОВНОЙ ПРОКРУТКОЙ) -->
+        <section id="tab-schema" class="tab-content hidden space-y-4">
+            <div class="px-1 space-y-1">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xs text-stone-500 font-bold uppercase tracking-wider">Схема расстановки столов</h2>
+                    <span class="text-[9px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider">2D Планировщик</span>
+                </div>
+                <p class="text-[10px] text-stone-400 font-semibold leading-relaxed">
+                    💡 <strong>Управление на ПК:</strong> Двигайте столы на <strong>ЛКМ</strong>. Двигайте сам зал на <strong>ПКМ</strong> или свободный фон. Колесо мыши / жест двумя пальцами — <strong>масштаб</strong>. Клик на стул выводит подсказку. Зажатие на 150мс поднимает гостя.
+                </p>
+            </div>
+
+            <!-- Обертка Canvas для Fullscreen режима (скроллбары убраны для бесконечного пана) -->
+            <div id="canvas-wrap" class="relative bg-stone-100 rounded-3xl border border-stone-200/80 overflow-hidden h-[480px] md:h-[650px] shadow-inner transition-all duration-300">
+
+                <!-- Переключатель режима отображения имен (ФИО на стульях) -->
+                <div class="absolute top-3 left-3 bg-white/95 border border-stone-200 px-3 py-2 rounded-xl shadow-md z-20 flex items-center gap-2 transition-all">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggle-names-mode" onchange="toggleNamesMode(this.checked)" class="sr-only peer">
+                        <div class="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-800"></div>
+                        <span class="ms-2 text-[10px] font-bold text-stone-700 select-none">ФИО на стульях</span>
+                    </label>
+                </div>
+
+                <!-- Кнопка перехода во весь экран -->
+                <button onclick="toggleCanvasFullscreen()" class="absolute top-3 right-3 bg-white/95 hover:bg-white text-stone-700 hover:text-emerald-900 border border-stone-200 p-2.5 rounded-xl shadow-md z-20 flex items-center justify-center transition-all active:scale-95" title="Развернуть во весь экран">
+                    <i data-lucide="maximize-2" id="fullscreen-icon" class="w-4.5 h-4.5"></i>
+                </button>
+
+                <!-- Сам холст -->
+                <canvas id="seating-canvas" class="block cursor-grab active:cursor-grabbing mx-auto"></canvas>
+            </div>
+
+            <!-- Легенда -->
+            <div class="bg-white/90 glass-panel island-card p-3 flex justify-between text-[10px] font-bold text-stone-500 border border-stone-200/50">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3.5 h-3.5 rounded-full bg-emerald-900 border border-amber-400 block shadow-xs"></span>
+                    <span>Место занято</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3.5 h-3.5 rounded-full bg-stone-50 border border-dashed border-stone-300 block"></span>
+                    <span>Место свободно</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="w-3.5 h-3.5 rounded-full bg-white border-2 border-red-600 block"></span>
+                    <span>Стол заполнен</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ВКЛАДКА 5: ФИНАНСЫ -->
+        <section id="tab-finance" class="tab-content hidden space-y-4">
+            
+            <!-- Внутренние вкладки Финансов (Островки) -->
+            <div class="flex bg-white/80 glass-panel p-1 rounded-xl border border-stone-200/50 w-full md:w-max gap-1 shadow-sm">
+                <button onclick="switchFinanceTab('overview')" id="fintab-btn-overview" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-emerald-800 text-white shadow-sm">
+                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Сводка & Анализ
+                </button>
+                <button onclick="switchFinanceTab('expenses')" id="fintab-btn-expenses" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900">
+                    <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Расходы
+                </button>
+                <button onclick="switchFinanceTab('income')" id="fintab-btn-income" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900">
+                    <i data-lucide="gift" class="w-3.5 h-3.5"></i> Приход от гостей
+                </button>
+            </div>
+
+            <!-- Внутренняя вкладка 1: Сводка & Анализ -->
+            <div id="tab-fin-overview" class="space-y-4">
+                <!-- Верхняя сводка -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="bg-white/95 glass-panel island-card p-4 flex flex-col justify-between border border-stone-200/50">
+                        <span class="text-[10px] text-stone-400 uppercase tracking-wider font-bold">Ожидаемый приход (По умолчанию)</span>
+                        <div class="flex items-baseline gap-1 mt-2">
+                            <span class="text-2xl font-extrabold text-emerald-800" id="fin-expected-income">0</span>
+                            <span class="text-sm font-bold text-stone-500 fin-curr-label">KGS</span>
+                        </div>
+                        <span class="text-[9px] text-stone-400 block mt-1">Кол-во гостей × средний подарок</span>
+                    </div>
+                    
+                    <div class="bg-white/95 glass-panel island-card p-4 flex flex-col justify-between border border-stone-200/50">
+                        <span class="text-[10px] text-stone-400 uppercase tracking-wider font-bold">Фактический приход</span>
+                        <div class="flex items-baseline gap-1 mt-2">
+                            <span class="text-2xl font-extrabold text-blue-800" id="fin-actual-income">0</span>
+                            <span class="text-sm font-bold text-stone-500 fin-curr-label">KGS</span>
+                        </div>
+                        <span class="text-[9px] text-stone-400 block mt-1">Всего фактически подарено гостями</span>
+                    </div>
+
+                    <div class="bg-white/95 glass-panel island-card p-4 flex flex-col justify-between border border-stone-200/50">
+                        <span class="text-[10px] text-stone-400 uppercase tracking-wider font-bold">Бюджет / Расходы факт</span>
+                        <div class="flex items-baseline gap-1 mt-2">
+                            <span class="text-2xl font-extrabold text-stone-850" id="fin-actual-expenses">0</span>
+                            <span class="text-[10px] text-stone-400 font-semibold block ml-1 leading-none">из <span id="fin-planned-expenses">0</span> план</span>
+                        </div>
+                        <span class="text-[9px] text-stone-400 block mt-1" id="fin-budget-limit-hint">Лимит бюджета: 0 KGS</span>
+                    </div>
+                </div>
+
+                <!-- Анализ -->
+                <div class="bg-white/90 glass-panel island-card p-5 border border-stone-200/50 space-y-4">
+                    <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1 border-b border-stone-150 pb-2.5">
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5 text-stone-500"></i> Финансовый Анализ и Итоги
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Сравнительная сводная таблица -->
+                        <div class="space-y-2 text-xs">
+                            <h4 class="font-bold text-stone-850 uppercase tracking-wider text-[9px] text-stone-400">Сводный баланс бюджета</h4>
+                            
+                            <div class="divide-y divide-stone-100">
+                                <div class="py-2 flex justify-between font-medium">
+                                    <span class="text-stone-500">Общий приход денег (план / факт)</span>
+                                    <span class="font-bold text-stone-850"><span id="ana-planned-inc">0</span> / <span id="ana-actual-inc" class="text-blue-800">0</span> <span class="fin-curr-label">KGS</span></span>
+                                </div>
+                                <div class="py-2 flex justify-between font-medium">
+                                    <span class="text-stone-500">Общий расход бюджета (план / факт)</span>
+                                    <span class="font-bold text-stone-850"><span id="ana-planned-exp">0</span> / <span id="ana-actual-exp">0</span> <span class="fin-curr-label">KGS</span></span>
+                                </div>
+                                <div class="py-2.5 flex justify-between text-sm font-bold border-t border-stone-200">
+                                    <span>Чистый остаток (план / факт)</span>
+                                    <span><span id="ana-planned-bal">0</span> / <span id="ana-actual-bal" class="text-emerald-800">0</span> <span class="fin-curr-label">KGS</span></span>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-stone-50 border border-stone-150 text-[10px] text-stone-500 font-semibold" id="ana-budget-analysis-text">
+                                Анализируем бюджет...
+                            </div>
+                        </div>
+
+                        <!-- Таблица по категориям расходов -->
+                        <div class="space-y-2 text-xs">
+                            <h4 class="font-bold text-stone-850 uppercase tracking-wider text-[9px] text-stone-400">Расходы по статьям</h4>
+                            <div class="max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                                <table class="w-full text-left">
+                                    <thead>
+                                        <tr class="border-b border-stone-200 text-[9px] font-bold text-stone-400 uppercase tracking-wider">
+                                            <th class="py-1.5 font-bold">Статья расхода</th>
+                                            <th class="py-1.5 text-right font-bold">План</th>
+                                            <th class="py-1.5 text-right font-bold">Факт</th>
+                                            <th class="py-1.5 text-right font-bold">Разница</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="finance-analysis-category-rows" class="divide-y divide-stone-100">
+                                        <!-- Заполняется динамически -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Внутренняя вкладка 2: Расходы -->
+            <div id="tab-fin-expenses" class="hidden space-y-4 animate-fadeIn">
+                <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-3">
+                    <div class="flex justify-between items-center border-b border-stone-150 pb-2.5">
+                        <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="receipt" class="w-3.5 h-3.5 text-stone-500"></i> Журнал расходов
+                        </h3>
+                        <button onclick="openExpenseModal()" class="bg-emerald-800 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition shadow-sm">
+                            <i data-lucide="plus" class="w-3 h-3"></i> Добавить расход
+                        </button>
+                    </div>
+
+                    <!-- Переключатели подвкладок расходов -->
+                    <div class="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200/40 w-fit gap-1 text-[10px] shadow-xs">
+                        <button onclick="switchExpenseSubTab('planned')" id="expense-subtab-planned" class="px-3 py-1 rounded-md font-bold transition bg-white text-stone-850 shadow-xs">
+                            Планируемые расходы
+                        </button>
+                        <button onclick="switchExpenseSubTab('actual')" id="expense-subtab-actual" class="px-3 py-1 rounded-md font-bold transition text-stone-500 hover:text-stone-800">
+                            Фактические расходы
+                        </button>
+                    </div>
+
+                    <!-- Список расходов -->
+                    <div id="finance-expenses-list" class="space-y-2 max-h-[420px] overflow-y-auto pr-1 no-scrollbar text-xs">
+                        <!-- Заполняется динамически -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Внутренняя вкладка 3: Приход от гостей (С группировкой) -->
+            <div id="tab-fin-income" class="hidden space-y-4 animate-fadeIn">
+                <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-3">
+                    <div class="flex justify-between items-center border-b border-stone-150 pb-2.5">
+                        <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="gift" class="w-3.5 h-3.5 text-stone-500"></i> Журнал прихода от гостей
+                        </h3>
+                        <span class="text-[9px] font-bold text-stone-400 bg-stone-100 px-2.5 py-1 rounded-lg">
+                            Фактические подарки
+                        </span>
+                    </div>
+
+                    <!-- Поиск гостей в финансах -->
+                    <div class="relative">
+                        <input type="text" id="finance-guest-search" placeholder="Поиск гостя по имени..." oninput="renderFinanceGuests()"
+                               class="w-full bg-stone-50/50 border border-stone-200 rounded-xl py-2 pl-9 pr-3 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                        <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-stone-400"></i>
+                    </div>
+
+                    <!-- Переключатели группировки в финансах гостей -->
+                    <div class="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200/40 w-fit gap-1 text-[10px] shadow-xs">
+                        <button onclick="switchFinanceGroupMode('list')" id="fin-subtab-list" class="px-3.5 py-1.5 rounded-md font-bold transition bg-white text-stone-850 shadow-xs">
+                            Список
+                        </button>
+                        <button onclick="switchFinanceGroupMode('tables')" id="fin-subtab-tables" class="px-3.5 py-1.5 rounded-md font-bold transition text-stone-600 hover:text-stone-900">
+                            Столы
+                        </button>
+                        <button onclick="switchFinanceGroupMode('categories')" id="fin-subtab-categories" class="px-3.5 py-1.5 rounded-md font-bold transition text-stone-600 hover:text-stone-900">
+                            Категории
+                        </button>
+                    </div>
+
+                    <!-- Таблица гостей финансов (Группировки выводятся внутри) -->
+                    <div class="max-h-[420px] overflow-y-auto pr-1 no-scrollbar space-y-2 text-xs" id="finance-guests-list">
+                        <!-- Заполняется динамически -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+    </main>
+
+    <!-- ПЛАВАЮЩИЙ БАР ДЛЯ ВЫДЕЛЕННЫХ ГОСТЕЙ -->
+    <div id="bulk-action-bar" class="fixed bottom-24 left-0 right-0 z-40 px-4 py-2 transform translate-y-28 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="max-w-md mx-auto bg-emerald-950/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-xl border border-emerald-900 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="bg-amber-500 text-emerald-950 font-bold text-xs w-6 h-6 rounded-full flex items-center justify-center shadow-inner" id="selected-guests-badge">0</span>
+                <span class="text-[11px] font-bold text-stone-300">выбрано</span>
+            </div>
+            
+            <div class="flex gap-1">
+                <button onclick="openMassSeatModal()" class="bg-emerald-800 hover:bg-emerald-700 text-xs font-bold py-2 px-3 rounded-xl flex items-center gap-1 transition">
+                    <i data-lucide="armchair" class="w-3.5 h-3.5"></i> Рассадка
+                </button>
+                <button onclick="openMassCategoryModal()" class="bg-emerald-800 hover:bg-emerald-700 text-xs font-bold py-2 px-3 rounded-xl flex items-center gap-1 transition">
+                    <i data-lucide="tag" class="w-3.5 h-3.5"></i> Категория
+                </button>
+                <button onclick="confirmMassDelete()" class="bg-red-800 hover:bg-red-700 text-xs font-bold p-2.5 rounded-xl transition">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ТАББАР ДЛЯ МОБИЛЬНЫХ (Скрыт на ПК - ПАРИТ ОСТРОВКОМ) -->
+    <nav class="fixed bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md border border-stone-200/50 py-3 px-4 shadow-xl z-30 md:hidden rounded-2xl overflow-x-auto no-scrollbar">
+        <div class="max-w-md mx-auto flex justify-between gap-5 min-w-max px-2">
+            <button onclick="switchTab('profile')" id="btn-tab-profile" class="flex flex-col items-center gap-1 text-stone-400 focus:outline-none transition shrink-0">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Главная</span>
+            </button>
+            <button onclick="switchTab('guests')" id="btn-tab-guests" class="flex flex-col items-center gap-1 text-stone-400 focus:outline-none transition shrink-0">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Гости</span>
+            </button>
+            <button onclick="switchTab('tables')" id="btn-tab-tables" class="flex flex-col items-center gap-1 text-stone-400 focus:outline-none transition shrink-0">
+                <i data-lucide="armchair" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Столы</span>
+            </button>
+            <button onclick="switchTab('schema')" id="btn-tab-schema" class="flex flex-col items-center gap-1 text-stone-400 focus:outline-none transition shrink-0">
+                <i data-lucide="map" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Схема</span>
+            </button>
+            <button onclick="switchTab('finance')" id="btn-tab-finance" class="flex flex-col items-center gap-1 text-stone-400 focus:outline-none transition shrink-0">
+                <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Финансы</span>
+            </button>
+        </div>
+    </nav>
+
+
+    <!-- ========================================== -->
+    <!--            МОДАЛЬНЫЕ ОКНА                  -->
+    <!-- ========================================== -->
+
+    <!-- Модалка: Подтверждение действия (Confirm Modal) -->
+    <div id="modal-confirm" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-rose-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold serif-title text-base flex items-center gap-2" id="confirm-title">
+                    Подтверждение
+                </h3>
+                <button onclick="closeModal('modal-confirm')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-4">
+                <div class="flex items-start gap-3">
+                    <div class="bg-rose-50 text-rose-800 p-2.5 rounded-xl border border-rose-100 shrink-0">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-700"></i>
+                    </div>
+                    <p class="text-xs text-stone-600 font-semibold leading-relaxed" id="confirm-text">
+                        Вы уверены, что хотите выполнить это действие?
+                    </p>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="confirm-btn-cancel" class="w-1/2 bg-stone-100 text-stone-700 hover:bg-stone-200 text-xs font-bold py-3 rounded-xl transition">
+                        Отмена
+                    </button>
+                    <button type="button" id="confirm-btn-yes" class="w-1/2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm active:scale-95">
+                        Да, удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Добавление вида мероприятия -->
+    <div id="modal-custom-event-type" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold serif-title text-base flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="text-amber-400 w-5 h-5"></i>
+                    <span>Новый вид торжества</span>
+                </h3>
+                <button onclick="closeModal('modal-custom-event-type')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="custom-event-type-form" onsubmit="handleAddCustomEventType(event)" class="p-4 space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">Название торжества</label>
+                    <input type="text" id="new-event-type" required placeholder="Например: Шерине / Шежире" 
+                           class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-custom-event-type')" class="w-1/2 bg-stone-100 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="w-1/2 bg-emerald-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm">
+                        Добавить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка: Гость (Создание / Редактирование) -->
+    <div id="modal-guest" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold serif-title text-base flex items-center gap-2">
+                    <i data-lucide="user" class="text-amber-400 w-5 h-5"></i>
+                    <span id="guest-modal-title">Новый гость</span>
+                </h3>
+                <button onclick="closeModal('modal-guest')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="guest-form" onsubmit="handleSaveGuest(event)" class="p-4 space-y-4">
+                <input type="hidden" id="edit-guest-id" value="">
+                
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">ФИО / Имя гостя</label>
+                    <input type="text" id="guest-name" required placeholder="Например: Каныбек Исаев" 
+                           class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">Номер телефона (необязательно)</label>
+                    <input type="tel" id="guest-phone" placeholder="Например: +77071234567" 
+                           class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">Категория</label>
+                    <select id="guest-category" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">Назначить стол</label>
+                    <select id="guest-table" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </select>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-guest')" class="w-1/2 bg-stone-100 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="w-1/2 bg-emerald-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка: Стол (Создание / Редактирование) -->
+    <div id="modal-table" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold serif-title text-base flex items-center gap-2">
+                    <i data-lucide="armchair" class="text-amber-400 w-5 h-5"></i>
+                    <span id="table-modal-title">Новый стол</span>
+                </h3>
+                <button onclick="closeModal('modal-table')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="table-form" onsubmit="handleSaveTable(event)" class="p-4 space-y-4">
+                <input type="hidden" id="edit-table-id" value="">
+                
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="col-span-1">
+                        <label class="text-xs font-bold text-stone-500 block mb-1">Номер стола</label>
+                        <input type="number" id="table-number" min="1" required placeholder="№" 
+                               class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-xs font-bold text-stone-500 block mb-1">Название (необязательно)</label>
+                        <input type="text" id="table-name" placeholder="Например: Семья" 
+                               class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-bold text-stone-500 block mb-1">Лимит мест</label>
+                        <input type="number" id="table-capacity" min="1" required placeholder="10" 
+                               class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-stone-500 block mb-1">Категория стола</label>
+                        <select id="table-category" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-table')" class="w-1/2 bg-stone-100 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="w-1/2 bg-emerald-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка: Категория (Создание / Редактирование) -->
+    <div id="modal-category" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold serif-title text-base flex items-center gap-2">
+                    <i data-lucide="tag" class="text-amber-400 w-5 h-5"></i>
+                    <span id="category-modal-title">Новая категория</span>
+                </h3>
+                <button onclick="closeModal('modal-category')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="category-form" onsubmit="handleSaveCategory(event)" class="p-4 space-y-4">
+                <input type="hidden" id="edit-category-id" value="">
+                
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">Название категории</label>
+                    <input type="text" id="category-name" required placeholder="Например: Друзья жениха" 
+                           class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-category')" class="w-1/2 bg-stone-100 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="w-1/2 bg-emerald-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка: Категория Расхода (Создание / Редактирование) -->
+    <div id="modal-expense-category" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold serif-title text-base flex items-center gap-2">
+                    <i data-lucide="tag" class="text-amber-400 w-5 h-5"></i>
+                    <span id="expense-category-modal-title">Новая категория расходов</span>
+                </h3>
+                <button onclick="closeModal('modal-expense-category')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="expense-category-form" onsubmit="handleSaveExpenseCategory(event)" class="p-4 space-y-4">
+                <input type="hidden" id="edit-expense-category-old-name" value="">
+                
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">Название категории</label>
+                    <input type="text" id="expense-category-name" required placeholder="Например: Шоу-программа" 
+                           class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-expense-category')" class="w-1/2 bg-stone-100 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="w-1/2 bg-emerald-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка: Расход (Создание / Редактирование) -->
+    <div id="modal-add-expense" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold serif-title text-base flex items-center gap-2">
+                    <i data-lucide="wallet" class="text-amber-400 w-5 h-5"></i>
+                    <span id="expense-modal-title">Новый расход</span>
+                </h3>
+                <button onclick="closeModal('modal-add-expense')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="expense-form" onsubmit="handleSaveExpense(event)" class="p-4 space-y-4">
+                <input type="hidden" id="edit-expense-id" value="">
+                <input type="hidden" id="expense-type" value="">
+                
+                <div>
+                    <label class="text-xs font-bold text-stone-500 block mb-1">Название расхода</label>
+                    <input type="text" id="expense-name" required placeholder="Например: Аренда звука" 
+                           class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-bold text-stone-500 block mb-1">Категория</label>
+                        <select id="expense-category" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                        </select>
+                    </div>
+                    <div>
+                        <label id="expense-amount-label" class="text-xs font-bold text-stone-500 block mb-1">Сумма расхода</label>
+                        <input type="number" id="expense-amount" min="0" step="any" placeholder="0" 
+                               class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal('modal-add-expense')" class="w-1/2 bg-stone-100 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="w-1/2 bg-emerald-800 text-white text-xs font-bold py-3 rounded-xl transition shadow-sm">
+                        Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка: Детальный Инспектор Стола и Управление Гостями -->
+    <div id="modal-table-details" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-start">
+                <div>
+                    <h3 class="font-bold serif-title text-base flex items-center gap-2">
+                        <i data-lucide="armchair" class="text-amber-400 w-5 h-5"></i>
+                        <span id="detail-table-name">Название стола</span>
+                    </h3>
+                    <span id="detail-table-category" class="text-[10px] text-emerald-300 font-bold block mt-0.5">Категория стола</span>
+                </div>
+                <button onclick="closeModal('modal-table-details')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 space-y-4">
+                <div class="flex justify-between items-center bg-stone-50 p-3 rounded-2xl border border-stone-150 text-xs">
+                    <div>
+                        <span class="text-stone-400 block font-bold uppercase tracking-wider text-[8px]">Заполнение</span>
+                        <span class="font-extrabold text-stone-800 text-sm" id="detail-table-capacity">0 / 0 мест</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-stone-400 block font-bold uppercase tracking-wider text-[8px]">Текущий статус</span>
+                        <span class="font-extrabold text-sm" id="detail-table-status">Свободно</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h4 class="text-xs font-bold text-stone-500 uppercase tracking-wider">Гости за этим столом:</h4>
+                    <div id="detail-table-guests-list" class="space-y-2 max-h-60 overflow-y-auto pr-1 no-scrollbar animate-fadeIn">
+                        <!-- Заполняется динамически -->
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2 border-t border-stone-100">
+                    <button onclick="closeModal('modal-table-details')" class="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold py-3 rounded-xl transition">
+                        Закрыть детали стола
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Пакетная рассадка -->
+    <div id="modal-mass-seat" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end justify-center sm:items-center p-4 hidden">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i data-lucide="armchair" class="text-amber-400"></i>
+                    Массовая рассадка гостей
+                </h3>
+                <button onclick="closeModal('modal-mass-seat')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 space-y-3">
+                <p class="text-xs text-stone-500 font-medium">Выберите стол для рассадки выбранных гостей (<span id="mass-seat-count" class="font-bold">0</span> чел.):</p>
+                <div id="mass-seat-list" class="space-y-1.5 max-h-64 overflow-y-auto pr-1 no-scrollbar"></div>
+                <button onclick="closeModal('modal-mass-seat')" class="w-full bg-stone-100 text-stone-700 text-xs font-bold py-2.5 rounded-xl">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка: Пакетное изменение категории -->
+    <div id="modal-mass-category" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-end justify-center sm:items-center p-4 hidden">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                    <i data-lucide="tag" class="text-amber-400"></i>
+                    Смена категории списком
+                </h3>
+                <button onclick="closeModal('modal-mass-category')" class="text-stone-300 hover:text-white p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 space-y-3">
+                <p class="text-xs text-stone-500 font-medium">Выберите новую категорию для выделенных гостей (<span id="mass-category-count" class="font-bold">0</span> чел.):</p>
+                <div id="mass-category-list" class="space-y-1.5 max-h-64 overflow-y-auto pr-1 no-scrollbar"></div>
+                <button onclick="closeModal('modal-mass-category')" class="w-full bg-stone-100 text-stone-700 text-xs font-bold py-2.5 rounded-xl">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления (Toast) -->
+    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform scale-90">
+        <div class="glass-panel text-stone-900 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 border border-stone-200/50 max-w-sm">
+            <div class="bg-emerald-800 text-white rounded-full p-1 flex items-center justify-center">
+                <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-100"></i>
+            </div>
+            <span id="toast-text" class="text-xs font-bold text-stone-800 tracking-wide"></span>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!--            ЛОГИКА ПРИЛОЖЕНИЯ (JS)          -->
+    <!-- ========================================== -->
+    <!-- Наш модульный JS -->
+    <script src="js/state.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/profile.js"></script>
+    <script src="js/guests.js"></script>
+    <script src="js/tables.js"></script>
+    <script src="js/canvas.js"></script>
+    <script src="js/finance.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

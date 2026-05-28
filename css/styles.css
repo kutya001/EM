@@ -1,0 +1,38 @@
+/* ===== Event Management (EM) Pro v3 — Custom Styles ===== */
+
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    background-color: #f4f4f5; /* stone-100 fallback */
+}
+.serif-title {
+    font-family: 'Playfair Display', serif;
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+}
+.glass-panel-dark {
+    background: rgba(6, 78, 59, 0.92); /* emerald-950/92 */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(4, 120, 87, 0.4);
+}
+.island-card {
+    border-radius: 1.25rem; /* rounded-2xl */
+    box-shadow: 0 4px 20px -2px rgba(120, 113, 108, 0.08), 0 2px 8px -1px rgba(120, 113, 108, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.island-card-hover:hover {
+    box-shadow: 0 12px 30px -4px rgba(120, 113, 108, 0.15), 0 4px 12px -2px rgba(120, 113, 108, 0.08);
+    transform: translateY(-2px);
+}
