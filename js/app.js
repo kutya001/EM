@@ -16,8 +16,8 @@ function initApp() {
     if (isNewVisitor) {
         state = {
             guests: [],
-            tables: [],
-            categories: [],
+            tables: JSON.parse(JSON.stringify(defaultEmptyTables)),
+            categories: JSON.parse(JSON.stringify(defaultEmptyCategories)),
             profile: {
                 eventName: "",
                 date: "",
@@ -34,7 +34,7 @@ function initApp() {
             },
             finance: {
                 expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
-                expenses: []
+                expenses: JSON.parse(JSON.stringify(defaultEmptyExpenses))
             },
             showFullNames: false,
             guestsViewMode: 'list'

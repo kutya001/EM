@@ -128,9 +128,41 @@ async function loadDemoData() {
     saveState();
 }
 
+const defaultEmptyCategories = [
+    { id: "cat-1", name: "Родственники жениха (Мама)" },
+    { id: "cat-2", name: "Родственники жениха (Папа)" },
+    { id: "cat-3", name: "Родственники невесты (Мама)" },
+    { id: "cat-4", name: "Родственники невесты (Папа)" },
+    { id: "cat-5", name: "Друзья жениха" },
+    { id: "cat-6", name: "Друзья невесты" },
+    { id: "cat-7", name: "Коллеги жениха" },
+    { id: "cat-8", name: "Коллеги невесты" }
+];
+
+const defaultEmptyTables = [
+    { id: "tbl-1", number: 1, name: "", capacity: 10, categoryId: "none", x: 180, y: 150 },
+    { id: "tbl-2", number: 2, name: "", capacity: 10, categoryId: "none", x: 180, y: 420 },
+    { id: "tbl-3", number: 3, name: "", capacity: 10, categoryId: "none", x: 480, y: 150 },
+    { id: "tbl-4", number: 4, name: "", capacity: 10, categoryId: "none", x: 480, y: 420 },
+    { id: "tbl-5", number: 5, name: "", capacity: 10, categoryId: "none", x: 780, y: 150 },
+    { id: "tbl-6", number: 6, name: "", capacity: 10, categoryId: "none", x: 780, y: 420 }
+];
+
+const defaultEmptyExpenses = [
+    { id: "exp-1-plan", categoryId: "Аренда зала", name: "Аренда основного зала ресторана", amount: 0, type: "planned" },
+    { id: "exp-1-act", categoryId: "Аренда зала", name: "Аренда основного зала ресторана (предоплата)", amount: 0, type: "actual" },
+    { id: "exp-2-plan", categoryId: "Банкет / Меню", name: "Банкетное меню", amount: 0, type: "planned" },
+    { id: "exp-3-plan", categoryId: "Оформление / Декор", name: "Декор и флористика", amount: 0, type: "planned" },
+    { id: "exp-3-act", categoryId: "Оформление / Декор", name: "Аванс за декор", amount: 0, type: "actual" },
+    { id: "exp-4-plan", categoryId: "Ведущий / Шоу", name: "Гонорар ведущего и шоу-программы", amount: 0, type: "planned" },
+    { id: "exp-4-act", categoryId: "Ведущий / Шоу", name: "Аванс ведущему", amount: 0, type: "actual" },
+    { id: "exp-5-plan", categoryId: "Фото и видео", name: "Фотограф и видеограф", amount: 0, type: "planned" },
+    { id: "exp-5-act", categoryId: "Фото и видео", name: "Предоплата за съемку", amount: 0, type: "actual" }
+];
+
 function clearAllData() {
-    state.categories = [];
-    state.tables = [];
+    state.categories = JSON.parse(JSON.stringify(defaultEmptyCategories));
+    state.tables = JSON.parse(JSON.stringify(defaultEmptyTables));
     state.guests = [];
     state.profile = {
         eventName: "",
@@ -148,7 +180,7 @@ function clearAllData() {
     };
     state.finance = {
         expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
-        expenses: []
+        expenses: JSON.parse(JSON.stringify(defaultEmptyExpenses))
     };
     state.showFullNames = false;
     state.guestsViewMode = 'list';
