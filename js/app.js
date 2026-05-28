@@ -2,14 +2,43 @@
 
 function initApp() {
     const saved = localStorage.getItem(STORAGE_KEY);
+    let isNewVisitor = false;
     if (saved) {
         try {
             state = JSON.parse(saved);
         } catch (e) {
-            loadDemoData();
+            isNewVisitor = true;
         }
     } else {
-        loadDemoData();
+        isNewVisitor = true;
+    }
+
+    if (isNewVisitor) {
+        state = {
+            guests: [],
+            tables: [],
+            categories: [],
+            profile: {
+                eventName: "",
+                date: "",
+                timeStart: "",
+                timeEnd: "",
+                eventType: "Свадьба",
+                eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"],
+                budget: 0,
+                currency: "KGS",
+                avgGift: 0,
+                plannedGuests: 0,
+                venueName: "",
+                venueLink: ""
+            },
+            finance: {
+                expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
+                expenses: []
+            },
+            showFullNames: false,
+            guestsViewMode: 'list'
+        };
     }
 
     // Защита от старых сохранений
@@ -89,6 +118,12 @@ function initApp() {
     switchFinanceGroupMode('list');
     
     lucide.createIcons();
+
+    if (isNewVisitor) {
+        setTimeout(() => {
+            startOnboarding();
+        }, 300);
+    }
 }
 
 // --- Импорт / Экспорт ---

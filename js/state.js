@@ -99,18 +99,64 @@ function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function loadDemoData() {
-    state.categories = JSON.parse(JSON.stringify(defaultCategories));
-    state.tables = JSON.parse(JSON.stringify(defaultTables));
-    state.guests = JSON.parse(JSON.stringify(defaultGuests));
-    state.profile = JSON.parse(JSON.stringify(defaultProfile));
+async function loadDemoData() {
+    try {
+        const response = await fetch('demo_data.json');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+        const data = await response.json();
+        
+        state.categories = data.categories;
+        state.tables = data.tables;
+        state.guests = data.guests;
+        state.profile = data.profile;
+        state.finance = data.finance;
+    } catch (e) {
+        console.warn("Could not load demo_data.json, using hardcoded fallback data:", e);
+        state.categories = JSON.parse(JSON.stringify(defaultCategories));
+        state.tables = JSON.parse(JSON.stringify(defaultTables));
+        state.guests = JSON.parse(JSON.stringify(defaultGuests));
+        state.profile = JSON.parse(JSON.stringify(defaultProfile));
+        state.finance = {
+            expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
+            expenses: JSON.parse(JSON.stringify(defaultExpenses))
+        };
+    }
+    state.showFullNames = false;
+    state.guestsViewMode = 'list';
+    saveState();
+}
+
+function clearAllData() {
+    state.categories = [];
+    state.tables = [];
+    state.guests = [];
+    state.profile = {
+        eventName: "",
+        date: "",
+        timeStart: "",
+        timeEnd: "",
+        eventType: "Свадьба",
+        eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"],
+        budget: 0,
+        currency: "KGS",
+        avgGift: 0,
+        plannedGuests: 0,
+        venueName: "",
+        venueLink: ""
+    };
     state.finance = {
         expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
-        expenses: JSON.parse(JSON.stringify(defaultExpenses))
+        expenses: []
     };
     state.showFullNames = false;
     state.guestsViewMode = 'list';
     saveState();
+    
+    if (typeof startOnboarding === 'function') {
+        startOnboarding();
+    }
 }
 
 // Гарантируем уникальность seatIndex для гостей стола

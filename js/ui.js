@@ -222,3 +222,183 @@ function drawRoundedRect(x, y, width, height, radius, fill, stroke) {
     if (fill) ctx.fill();
     if (stroke) ctx.stroke();
 }
+
+// --- ИНТЕРАКТИВНЫЙ ОНБОРДИНГ (МАСТЕР ВВОДА ДАННЫХ) ---
+var onboardingCurrentStep = 1;
+const onboardingTotalSteps = 4;
+
+function startOnboarding() {
+    onboardingCurrentStep = 1;
+    
+    const p = state.profile || {};
+    document.getElementById('onb-event-name').value = p.eventName || "";
+    document.getElementById('onb-event-type').value = p.eventType || "Свадьба";
+    document.getElementById('onb-date').value = p.date || "";
+    document.getElementById('onb-time-start').value = p.timeStart || "";
+    document.getElementById('onb-time-end').value = p.timeEnd || "";
+    document.getElementById('onb-venue-name').value = p.venueName || "";
+    document.getElementById('onb-venue-link').value = p.venueLink || "";
+    document.getElementById('onb-budget').value = p.budget || 500000;
+    document.getElementById('onb-planned-guests').value = p.plannedGuests || 100;
+    document.getElementById('onb-currency').value = p.currency || "KGS";
+    document.getElementById('onb-avg-gift').value = p.avgGift || 3000;
+
+    selectOnboardingStep(1);
+    openModal('modal-onboarding');
+}
+
+function selectOnboardingStep(stepIdx) {
+    onboardingCurrentStep = stepIdx;
+    
+    for (let i = 1; i <= onboardingTotalSteps; i++) {
+        const slide = document.getElementById(`onb-step-${i}`);
+        if (slide) slide.classList.add('hidden');
+        
+        const dot = document.getElementById(`onb-dot-${i}`);
+        if (dot) {
+            dot.className = `w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                i === stepIdx ? 'bg-amber-400 w-6' : 'bg-stone-300'
+            }`;
+        }
+    }
+    
+    const currentSlide = document.getElementById(`onb-step-${stepIdx}`);
+    if (currentSlide) currentSlide.classList.remove('hidden');
+    
+    const btnPrev = document.getElementById('onb-btn-prev');
+    const btnNext = document.getElementById('onb-btn-next');
+    
+    if (btnPrev) {
+        if (stepIdx === 1) {
+            btnPrev.classList.add('invisible');
+        } else {
+            btnPrev.classList.remove('invisible');
+        }
+    }
+    
+    if (btnNext) {
+        if (stepIdx === onboardingTotalSteps) {
+            btnNext.innerText = "Начать планирование!";
+        } else {
+            btnNext.innerText = "Далее";
+        }
+    }
+}
+
+function nextOnboardingStep() {
+    if (onboardingCurrentStep === 1) {
+        const name = document.getElementById('onb-event-name').value.trim();
+        if (!name) {
+            showToast("Пожалуйста, введите название вашего мероприятия");
+            const input = document.getElementById('onb-event-name');
+            input.focus();
+            input.classList.add('ring-2', 'ring-red-500');
+            setTimeout(() => input.classList.remove('ring-2', 'ring-red-500'), 2000);
+            return;
+        }
+    }
+    
+    if (onboardingCurrentStep < onboardingTotalSteps) {
+        selectOnboardingStep(onboardingCurrentStep + 1);
+    } else {
+        completeOnboarding();
+    }
+}
+
+function prevOnboardingStep() {
+    if (onboardingCurrentStep > 1) {
+        selectOnboardingStep(onboardingCurrentStep - 1);
+    }
+}
+
+function completeOnboarding() {
+    const eventName = document.getElementById('onb-event-name').value.trim();
+    const eventType = document.getElementById('onb-event-type').value;
+    const date = document.getElementById('onb-date').value;
+    const timeStart = document.getElementById('onb-time-start').value;
+    const timeEnd = document.getElementById('onb-time-end').value;
+    const venueName = document.getElementById('onb-venue-name').value.trim();
+    const venueLink = document.getElementById('onb-venue-link').value.trim();
+    const budget = parseFloat(document.getElementById('onb-budget').value) || 0;
+    const plannedGuests = parseInt(document.getElementById('onb-planned-guests').value) || 0;
+    const currency = document.getElementById('onb-currency').value;
+    const avgGift = parseFloat(document.getElementById('onb-avg-gift').value) || 0;
+
+    state.profile = {
+        ...state.profile,
+        eventName,
+        date,
+        timeStart,
+        timeEnd,
+        eventType,
+        venueName,
+        venueLink,
+        budget,
+        plannedGuests,
+        currency,
+        avgGift,
+        eventTypes: state.profile ? (state.profile.eventTypes || ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"]) : ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"]
+    };
+
+    if (!state.categories || state.categories.length === 0) {
+        state.categories = [
+            { id: "cat-1", name: "Родственники жениха (Мама)" },
+            { id: "cat-2", name: "Родственники жениха (Папа)" },
+            { id: "cat-3", name: "Родственники невесты (Мама)" },
+            { id: "cat-4", name: "Родственники невесты (Папа)" },
+            { id: "cat-5", name: "Друзья жениха" },
+            { id: "cat-6", name: "Друзья невесты" },
+            { id: "cat-7", name: "Коллеги жениха" },
+            { id: "cat-8", name: "Коллеги невесты" }
+        ];
+    }
+    if (!state.finance) {
+        state.finance = {
+            expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
+            expenses: []
+        };
+    }
+
+    saveState();
+    closeModal('modal-onboarding');
+    
+    const subtitle = document.getElementById('header-subtitle');
+    if (subtitle) {
+        subtitle.innerText = eventName ? eventName : "Система планирования мероприятий";
+    }
+    document.querySelectorAll('.fin-curr-label').forEach(el => {
+        el.innerText = currency;
+    });
+
+    renderAll();
+    showToast("Мероприятие успешно создано! Приступайте к планированию.");
+}
+
+async function onboardingLoadDemo() {
+    closeModal('modal-onboarding');
+    showToast("Загрузка демонстрационных данных...");
+    await loadDemoData();
+    ensureSeatIndices();
+    updateDropdowns();
+    selectedGuests.clear();
+    updateBulkActionBar();
+    
+    const p = state.profile;
+    const subtitle = document.getElementById('header-subtitle');
+    if (subtitle) {
+        subtitle.innerText = p.eventName ? p.eventName : "Система планирования мероприятий";
+    }
+    
+    renderAll();
+    showToast("Демонстрационные данные успешно загружены!");
+}
+
+function confirmClearAllData() {
+    showConfirm(
+        'Сбросить все данные и настроить заново?',
+        'Вы уверены? Это действие безвозвратно удалит текущий прогресс планировки и запустит интерактивный помощник настройки с нуля.',
+        () => {
+            clearAllData();
+        }
+    );
+}

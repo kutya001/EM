@@ -1,0 +1,65 @@
+{
+  "categories": [
+    { "id": "cat-1", "name": "Родственники жениха (Мама)" },
+    { "id": "cat-2", "name": "Родственники жениха (Папа)" },
+    { "id": "cat-3", "name": "Родственники невесты (Мама)" },
+    { "id": "cat-4", "name": "Родственники невесты (Папа)" },
+    { "id": "cat-5", "name": "Друзья жениха" },
+    { "id": "cat-6", "name": "Друзья невесты" },
+    { "id": "cat-7", "name": "Коллеги жениха" },
+    { "id": "cat-8", "name": "Коллеги невесты" }
+  ],
+  "tables": [
+    { "id": "tbl-1", "number": 1, "name": "Семья Жениха", "capacity": 8, "categoryId": "cat-1", "x": 180, "y": 150 },
+    { "id": "tbl-2", "number": 2, "name": "Семья Невесты", "capacity": 8, "categoryId": "cat-3", "x": 180, "y": 420 },
+    { "id": "tbl-3", "number": 3, "name": "Друзья Жениха", "capacity": 10, "categoryId": "cat-5", "x": 480, "y": 150 },
+    { "id": "tbl-4", "number": 4, "name": "Друзья Невесты", "capacity": 10, "categoryId": "cat-6", "x": 480, "y": 420 },
+    { "id": "tbl-5", "number": 5, "name": "Коллеги", "capacity": 10, "categoryId": "cat-7", "x": 780, "y": 150 },
+    { "id": "tbl-6", "number": 6, "name": "Резерв", "capacity": 8, "categoryId": "none", "x": 780, "y": 420 }
+  ],
+  "guests": [
+    { "id": "gst-1", "name": "Данияров Кутман", "phone": "+77071112233", "giftAmount": 5000, "categoryId": "cat-5", "tableId": "tbl-3", "seatIndex": 0 },
+    { "id": "gst-2", "name": "Калиматова Асель", "phone": "+77072223344", "giftAmount": 0, "categoryId": "cat-1", "tableId": "tbl-1", "seatIndex": 0 },
+    { "id": "gst-3", "name": "Макеев Бексултан", "phone": "+77779998877", "giftAmount": 4000, "categoryId": "cat-5", "tableId": "tbl-3", "seatIndex": 1 },
+    { "id": "gst-4", "name": "Исаев Каныбек", "phone": "+77011234567", "giftAmount": 0, "categoryId": "cat-7", "tableId": "none", "seatIndex": -1 },
+    { "id": "gst-5", "name": "Смагулова Жанар", "phone": "+77015554433", "giftAmount": 10000, "categoryId": "cat-3", "tableId": "tbl-2", "seatIndex": 0 },
+    { "id": "gst-6", "name": "Осмонов Нурбек", "phone": "+77075556677", "giftAmount": 0, "categoryId": "cat-2", "tableId": "tbl-1", "seatIndex": 1 },
+    { "id": "gst-7", "name": "Даниярова Чолпон", "phone": "+77078889900", "giftAmount": 3000, "categoryId": "cat-4", "tableId": "none", "seatIndex": -1 },
+    { "id": "gst-8", "name": "Абдыкадыров Ильяс", "phone": "+77721112233", "giftAmount": 5000, "categoryId": "cat-5", "tableId": "tbl-3", "seatIndex": 2 },
+    { "id": "gst-9", "name": "Султанова Мээрим", "phone": "+77054445566", "giftAmount": 6000, "categoryId": "cat-6", "tableId": "tbl-4", "seatIndex": 0 },
+    { "id": "gst-10", "name": "Темиров Арсен", "phone": "", "giftAmount": 0, "categoryId": "cat-1", "tableId": "tbl-1", "seatIndex": 2 },
+    { "id": "gst-11", "name": "Жусупова Айсулуу", "phone": "", "giftAmount": 0, "categoryId": "cat-3", "tableId": "tbl-2", "seatIndex": 1 },
+    { "id": "gst-12", "name": "Касымов Эрмек", "phone": "+77773334455", "giftAmount": 8000, "categoryId": "cat-7", "tableId": "tbl-5", "seatIndex": 0 },
+    { "id": "gst-13", "name": "Рыскулова Динара", "phone": "", "giftAmount": 0, "categoryId": "cat-8", "tableId": "tbl-5", "seatIndex": 1 },
+    { "id": "gst-14", "name": "Токтосунов Болот", "phone": "+77017778899", "giftAmount": 15000, "categoryId": "cat-2", "tableId": "tbl-1", "seatIndex": 3 },
+    { "id": "gst-15", "name": "Мамытова Гульнара", "phone": "", "giftAmount": 0, "categoryId": "cat-4", "tableId": "tbl-2", "seatIndex": 2 }
+  ],
+  "profile": {
+    "eventName": "Свадьба Кутмана & Асели",
+    "date": "2026-09-18",
+    "timeStart": "18:00",
+    "timeEnd": "23:59",
+    "eventType": "Свадьба",
+    "eventTypes": ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"],
+    "budget": 600000,
+    "currency": "KGS",
+    "avgGift": 4000,
+    "plannedGuests": 120,
+    "venueName": "Ресторан Ала-Тоо",
+    "venueLink": "https://2gis.kg/bishkek/firm/70000001019349887"
+  },
+  "finance": {
+    "expenseCategories": ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
+    "expenses": [
+      { "id": "exp-1-plan", "categoryId": "Аренда зала", "name": "Аренда основного зала ресторана", "amount": 150000, "type": "planned" },
+      { "id": "exp-1-act", "categoryId": "Аренда зала", "name": "Аренда основного зала ресторана (предоплата)", "amount": 150000, "type": "actual" },
+      { "id": "exp-2-plan", "categoryId": "Банкет / Меню", "name": "Банкетное меню на 120 человек", "amount": 240000, "type": "planned" },
+      { "id": "exp-3-plan", "categoryId": "Оформление / Декор", "name": "Декор сцены и гостевых столов флористикой", "amount": 60000, "type": "planned" },
+      { "id": "exp-3-act", "categoryId": "Оформление / Декор", "name": "Аванс декораторам за флористику", "amount": 30000, "type": "actual" },
+      { "id": "exp-4-plan", "categoryId": "Ведущий / Шоу", "name": "Гонорар тамады и звукорежиссера с аппаратурой", "amount": 45000, "type": "planned" },
+      { "id": "exp-4-act", "categoryId": "Ведущий / Шоу", "name": "Аванс ведущему торжества", "amount": 15000, "type": "actual" },
+      { "id": "exp-5-plan", "categoryId": "Фото и видео", "name": "Свадебный фотограф и двухкамерная видеосъемка SDE", "amount": 40000, "type": "planned" },
+      { "id": "exp-5-act", "categoryId": "Фото и видео", "name": "Предоплата за свадебную съемку SDE", "amount": 10000, "type": "actual" }
+    ]
+  }
+}
