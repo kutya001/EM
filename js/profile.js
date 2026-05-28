@@ -62,6 +62,13 @@ function setProfileEditMode(isEdit) {
         document.getElementById('profile-currency').value = p.currency || "KGS";
         document.getElementById('profile-avg-gift').value = p.avgGift || 0;
         
+        const useFin = p.useFinance !== false;
+        const toggleEl = document.getElementById('profile-use-finance');
+        if (toggleEl) {
+            toggleEl.checked = useFin;
+            toggleProfileFinanceFields(useFin);
+        }
+        
         updateProfileDropdowns();
         document.getElementById('profile-event-type').value = p.eventType || "Свадьба";
     } else {
@@ -137,6 +144,8 @@ function initProfileUI() {
     document.querySelectorAll('.fin-curr-label').forEach(el => {
         el.innerText = p.currency;
     });
+
+    updateFinanceVisibility();
 }
 
 function updateProfileDropdowns() {
@@ -165,10 +174,13 @@ function handleSaveProfile(event) {
     const currency = document.getElementById('profile-currency').value;
     const avgGift = parseFloat(document.getElementById('profile-avg-gift').value) || 0;
 
+    const useFinanceEl = document.getElementById('profile-use-finance');
+    const useFinance = useFinanceEl ? useFinanceEl.checked : true;
+
     state.profile = {
         ...state.profile,
         eventName, date, timeStart, timeEnd, eventType,
-        venueName, venueLink, budget, plannedGuests, currency, avgGift
+        venueName, venueLink, budget, plannedGuests, currency, avgGift, useFinance
     };
 
     saveState();
@@ -182,6 +194,7 @@ function handleSaveProfile(event) {
         el.innerText = currency;
     });
 
+    updateFinanceVisibility();
     showToast('Профиль торжества успешно сохранен');
     setProfileEditMode(false);
     renderAll();
@@ -281,3 +294,12 @@ function renderMiniExpenseCategories() {
     });
     lucide.createIcons();
 }
+
+function toggleProfileFinanceFields(checked) {
+    const container = document.getElementById('profile-edit-budget-container');
+    if (container) {
+        if (checked) container.classList.remove('hidden');
+        else container.classList.add('hidden');
+    }
+}
+

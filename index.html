@@ -128,7 +128,7 @@
                         </div>
 
                         <!-- Бюджет и Валюта -->
-                        <div class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 flex items-start gap-3">
+                        <div id="profile-view-budget-card" class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 flex items-start gap-3">
                             <div class="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-100 shrink-0">
                                 <i data-lucide="dollar-sign" class="w-4.5 h-4.5 text-emerald-700"></i>
                             </div>
@@ -227,21 +227,32 @@
                                 </div>
                             </div>
 
-                            <!-- Финансовые вводные -->
-                            <div class="grid grid-cols-2 gap-2">
+                            <!-- Планируемое количество гостей -->
+                            <div>
+                                <label class="text-xs font-bold text-stone-500 block mb-1">Планируемое количество гостей</label>
+                                <input type="number" id="profile-planned-guests" min="0" placeholder="100"
+                                       class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                            </div>
+
+                            <!-- Переключатель финансового учета -->
+                            <div class="md:col-span-2 bg-stone-50 p-4 rounded-2xl border border-stone-200/50 flex items-center justify-between select-none">
+                                <div>
+                                    <label class="text-xs font-bold text-stone-850 block">Планирование финансов</label>
+                                    <span class="text-[10px] text-stone-400 font-semibold block mt-0.5">Включить учет сметы расходов и подарков</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                    <input type="checkbox" id="profile-use-finance" class="sr-only peer" onchange="toggleProfileFinanceFields(this.checked)">
+                                    <div class="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-800"></div>
+                                </label>
+                            </div>
+
+                            <!-- Группа финансовых полей (показывается/скрывается) -->
+                            <div id="profile-edit-budget-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="text-xs font-bold text-stone-500 block mb-1">Общий бюджет</label>
                                     <input type="number" id="profile-budget" placeholder="500000"
                                            class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
                                 </div>
-                                <div>
-                                    <label class="text-xs font-bold text-stone-500 block mb-1">Планируемое кол-во гостей</label>
-                                    <input type="number" id="profile-planned-guests" min="0" placeholder="100"
-                                           class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-xs font-bold text-stone-500 block mb-1">Валюта</label>
                                     <select id="profile-currency"
@@ -251,7 +262,7 @@
                                         <option value="USD">USD ($)</option>
                                     </select>
                                 </div>
-                                <div>
+                                <div class="md:col-span-2">
                                     <label class="text-xs font-bold text-stone-500 block mb-1">Средний подарок гостя</label>
                                     <input type="number" id="profile-avg-gift" placeholder="3000"
                                            class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
@@ -1154,6 +1165,17 @@
                                class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
                     </div>
 
+                    <div class="space-y-2.5 bg-stone-50 p-4 rounded-2xl border border-stone-200/50">
+                        <label class="relative inline-flex items-center cursor-pointer w-full justify-between select-none">
+                            <div>
+                                <span class="text-xs font-bold text-stone-850 block">Планирование финансов</span>
+                                <span class="text-[10px] text-stone-400 font-semibold block mt-0.5">Включить учет сметы расходов и подарков гостей</span>
+                            </div>
+                            <input type="checkbox" id="onb-use-finance" checked class="sr-only peer" onchange="toggleOnboardingFinanceFields(this.checked)">
+                            <div class="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-800 shrink-0"></div>
+                        </label>
+                    </div>
+
                     <div class="pt-4 border-t border-stone-100 flex flex-col gap-2">
                         <button type="button" onclick="onboardingLoadDemo()" class="w-full bg-amber-500 hover:bg-amber-400 text-emerald-950 text-xs font-extrabold py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs">
                             <i data-lucide="sparkles" class="w-4 h-4"></i> Смотреть демонстративные данные
@@ -1211,28 +1233,29 @@
 
                 <!-- ШАГ 4 -->
                 <div id="onb-step-4" class="space-y-4 hidden">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-stone-500 block">Валюта</label>
-                            <select id="onb-currency" class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
-                                <option value="KGS">KGS (сом)</option>
-                                <option value="RUB">RUB (₽)</option>
-                                <option value="USD">USD ($)</option>
-                            </select>
-                        </div>
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-stone-500 block">Общий бюджет</label>
-                            <input type="number" id="onb-budget" placeholder="500000"
-                                   class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
-                        </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-stone-500 block">Планируемое количество гостей</label>
+                        <input type="number" id="onb-planned-guests" placeholder="100"
+                               class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="space-y-1.5">
-                            <label class="text-xs font-bold text-stone-500 block">Планируемые гости</label>
-                            <input type="number" id="onb-planned-guests" placeholder="100"
-                                   class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    <div id="onb-financial-fields-container" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-bold text-stone-500 block">Валюта</label>
+                                <select id="onb-currency" class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                    <option value="KGS">KGS (сом)</option>
+                                    <option value="RUB">RUB (₽)</option>
+                                    <option value="USD">USD ($)</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-xs font-bold text-stone-500 block">Общий бюджет</label>
+                                <input type="number" id="onb-budget" placeholder="500000"
+                                       class="w-full bg-stone-50/50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                            </div>
                         </div>
+
                         <div class="space-y-1.5">
                             <label class="text-xs font-bold text-stone-500 block">Средний подарок гостя</label>
                             <input type="number" id="onb-avg-gift" placeholder="3000"
@@ -1276,43 +1299,131 @@
             
             <!-- Хедер инструкции -->
             <div class="bg-gradient-to-r from-emerald-950 to-emerald-800 text-amber-50 p-5 border-b border-emerald-900/30 shrink-0 relative overflow-hidden flex justify-between items-center">
-                <div class="relative z-10">
-                    <span class="text-[9px] uppercase tracking-widest text-emerald-300 font-bold block mb-1">Руководство пользователя EM Pro v3</span>
-                    <h3 class="text-lg font-bold serif-title text-white flex items-center gap-2">
-                        <i data-lucide="help-circle" class="w-5 h-5 text-amber-400"></i> Интерактивная инструкция
-                    </h3>
+                <div class="flex items-center gap-3 relative z-10">
+                    <button id="help-btn-back" onclick="switchHelpTab(0)" class="text-stone-300 hover:text-white bg-stone-900/40 p-2.5 rounded-xl border border-emerald-800/40 hidden active:scale-95 transition">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    </button>
+                    <div>
+                        <span class="text-[9px] uppercase tracking-widest text-emerald-300 font-bold block mb-1">Руководство пользователя EM Pro v3</span>
+                        <h3 class="text-lg font-bold serif-title text-white flex items-center gap-2">
+                            <i data-lucide="help-circle" class="w-5 h-5 text-amber-400"></i> Интерактивная инструкция
+                        </h3>
+                    </div>
                 </div>
                 <button onclick="closeModal('modal-help')" class="text-stone-300 hover:text-white bg-stone-900/40 p-2.5 rounded-xl border border-emerald-800/40 shrink-0 relative z-10 active:scale-95 transition">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <!-- Суб-переключатель разделов -->
-            <div class="p-3 bg-stone-50 border-b border-stone-150 shrink-0 overflow-x-auto no-scrollbar">
-                <div class="flex bg-stone-200/50 p-0.5 rounded-xl border border-stone-200/60 min-w-[500px] justify-between gap-0.5">
-                    <button type="button" onclick="switchHelpTab(1)" id="help-tab-btn-1" class="flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 bg-white text-emerald-850 shadow-xs border border-stone-200/40">
-                        <i data-lucide="home" class="w-3.5 h-3.5 inline mr-1"></i>Главная
-                    </button>
-                    <button type="button" onclick="switchHelpTab(2)" id="help-tab-btn-2" class="flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50">
-                        <i data-lucide="users" class="w-3.5 h-3.5 inline mr-1"></i>Гости
-                    </button>
-                    <button type="button" onclick="switchHelpTab(3)" id="help-tab-btn-3" class="flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50">
-                        <i data-lucide="armchair" class="w-3.5 h-3.5 inline mr-1"></i>Столы
-                    </button>
-                    <button type="button" onclick="switchHelpTab(4)" id="help-tab-btn-4" class="flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50">
-                        <i data-lucide="map" class="w-3.5 h-3.5 inline mr-1"></i>Схема зала
-                    </button>
-                    <button type="button" onclick="switchHelpTab(5)" id="help-tab-btn-5" class="flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50">
-                        <i data-lucide="dollar-sign" class="w-3.5 h-3.5 inline mr-1"></i>Финансы
-                    </button>
-                </div>
-            </div>
-
             <!-- Тело инструкции (Скроллируемый контент) -->
             <div class="p-6 overflow-y-auto space-y-4 text-xs font-medium text-stone-600 flex-1 no-scrollbar leading-relaxed">
                 
+                <!-- СЛАЙД-ИНДЕКС: ВИЗУАЛЬНЫЙ ROADMAP И ГРИД РАЗДЕЛОВ -->
+                <div id="help-slide-index" class="space-y-6 animate-fadeIn">
+                    <div class="bg-emerald-50 border border-emerald-100/50 rounded-2xl p-4 space-y-3">
+                        <h4 class="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
+                            <i data-lucide="compass" class="w-4.5 h-4.5 text-emerald-800"></i> Карта успешного планирования
+                        </h4>
+                        <p class="text-stone-700 text-[11px] leading-relaxed font-semibold">
+                            Добро пожаловать в EM Pro v3! Мы подготовили для вас 5 простых шагов к безупречному событию. Пройдите по ним, чтобы создать незабываемое торжество.
+                        </p>
+                    </div>
+
+                    <!-- Визуальный Roadmap (Цепочка шагов) -->
+                    <div class="bg-stone-50 border border-stone-200/50 rounded-2xl p-4">
+                        <span class="text-[9px] uppercase tracking-widest text-stone-400 font-extrabold block mb-4 text-center">Этапы подготовки</span>
+                        <div class="flex items-center justify-between gap-1 relative">
+                            <!-- Линия соединения -->
+                            <div class="absolute top-4 left-4 right-4 h-0.5 bg-stone-200 -z-0"></div>
+                            
+                            <!-- Шаг 1 -->
+                            <button onclick="switchHelpTab(1)" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none group">
+                                <div id="roadmap-step-badge-1" class="w-8 h-8 rounded-full bg-white border-2 border-stone-300 text-stone-500 font-extrabold text-xs flex items-center justify-center transition-all duration-300 group-hover:border-emerald-850 group-hover:text-emerald-850 group-hover:scale-110 shadow-xs">1</div>
+                                <span class="text-[9px] font-bold text-stone-400 group-hover:text-stone-800 transition">Профиль</span>
+                            </button>
+                            
+                            <!-- Шаг 2 -->
+                            <button onclick="switchHelpTab(2)" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none group">
+                                <div id="roadmap-step-badge-2" class="w-8 h-8 rounded-full bg-white border-2 border-stone-300 text-stone-500 font-extrabold text-xs flex items-center justify-center transition-all duration-300 group-hover:border-emerald-850 group-hover:text-emerald-850 group-hover:scale-110 shadow-xs">2</div>
+                                <span class="text-[9px] font-bold text-stone-400 group-hover:text-stone-800 transition">Гости</span>
+                            </button>
+
+                            <!-- Шаг 3 -->
+                            <button onclick="switchHelpTab(3)" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none group">
+                                <div id="roadmap-step-badge-3" class="w-8 h-8 rounded-full bg-white border-2 border-stone-300 text-stone-500 font-extrabold text-xs flex items-center justify-center transition-all duration-300 group-hover:border-emerald-850 group-hover:text-emerald-850 group-hover:scale-110 shadow-xs">3</div>
+                                <span class="text-[9px] font-bold text-stone-400 group-hover:text-stone-800 transition">Столы</span>
+                            </button>
+
+                            <!-- Шаг 4 -->
+                            <button onclick="switchHelpTab(4)" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none group">
+                                <div id="roadmap-step-badge-4" class="w-8 h-8 rounded-full bg-white border-2 border-stone-300 text-stone-500 font-extrabold text-xs flex items-center justify-center transition-all duration-300 group-hover:border-emerald-850 group-hover:text-emerald-850 group-hover:scale-110 shadow-xs">4</div>
+                                <span class="text-[9px] font-bold text-stone-400 group-hover:text-stone-800 transition">Рассадка</span>
+                            </button>
+
+                            <!-- Шаг 5 -->
+                            <button onclick="switchHelpTab(5)" id="roadmap-step-btn-5" class="relative z-10 flex flex-col items-center gap-1.5 focus:outline-none group">
+                                <div id="roadmap-step-badge-5" class="w-8 h-8 rounded-full bg-white border-2 border-stone-300 text-stone-500 font-extrabold text-xs flex items-center justify-center transition-all duration-300 group-hover:border-emerald-850 group-hover:text-emerald-850 group-hover:scale-110 shadow-xs">5</div>
+                                <span class="text-[9px] font-bold text-stone-400 group-hover:text-stone-800 transition">Финансы</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Сетка из 5 интерактивных карточек -->
+                    <div class="grid grid-cols-2 gap-3.5">
+                        <button onclick="switchHelpTab(1)" class="text-left bg-stone-50 hover:bg-stone-100/80 border border-stone-200/50 hover:border-emerald-800/25 p-3.5 rounded-2xl transition duration-300 group hover:-translate-y-0.5 shadow-2xs hover:shadow-xs flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                                <i data-lucide="home" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-stone-850 font-extrabold text-xs">1. Профиль события</h5>
+                                <p class="text-[10px] text-stone-400 font-semibold mt-0.5">Ввод даты, места события и бюджета</p>
+                            </div>
+                        </button>
+
+                        <button onclick="switchHelpTab(2)" class="text-left bg-stone-50 hover:bg-stone-100/80 border border-stone-200/50 hover:border-emerald-800/25 p-3.5 rounded-2xl transition duration-300 group hover:-translate-y-0.5 shadow-2xs hover:shadow-xs flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                                <i data-lucide="users" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-stone-850 font-extrabold text-xs">2. Список гостей</h5>
+                                <p class="text-[10px] text-stone-400 font-semibold mt-0.5">Добавление, WhatsApp-связь, категории</p>
+                            </div>
+                        </button>
+
+                        <button onclick="switchHelpTab(3)" class="text-left bg-stone-50 hover:bg-stone-100/80 border border-stone-200/50 hover:border-emerald-800/25 p-3.5 rounded-2xl transition duration-300 group hover:-translate-y-0.5 shadow-2xs hover:shadow-xs flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+                                <i data-lucide="armchair" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-stone-850 font-extrabold text-xs">3. Справочник столов</h5>
+                                <p class="text-[10px] text-stone-400 font-semibold mt-0.5">Вместимость, категории столов и списки</p>
+                            </div>
+                        </button>
+
+                        <button onclick="switchHelpTab(4)" class="text-left bg-stone-50 hover:bg-stone-100/80 border border-stone-200/50 hover:border-emerald-800/25 p-3.5 rounded-2xl transition duration-300 group hover:-translate-y-0.5 shadow-2xs hover:shadow-xs flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                                <i data-lucide="map" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-stone-850 font-extrabold text-xs">4. 2D Схема зала</h5>
+                                <p class="text-[10px] text-stone-400 font-semibold mt-0.5">Drag-and-drop столов, радиальное меню рассадки</p>
+                            </div>
+                        </button>
+
+                        <button onclick="switchHelpTab(5)" id="help-index-card-finance" class="col-span-2 text-left bg-stone-50 hover:bg-stone-100/80 border border-stone-200/50 hover:border-emerald-800/25 p-3.5 rounded-2xl transition duration-300 group hover:-translate-y-0.5 shadow-2xs hover:shadow-xs flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+                                <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-stone-850 font-extrabold text-xs">5. Бюджет и Финансы</h5>
+                                <p class="text-[10px] text-stone-400 font-semibold mt-0.5">Учет сметы расходов, подарков гостей и расчет окупаемости</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+                
                 <!-- СЛАЙД 1: ГЛАВНАЯ -->
-                <div id="help-slide-1" class="space-y-4 animate-fadeIn">
+                <div id="help-slide-1" class="space-y-5 hidden animate-fadeIn">
                     <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
                         <h4 class="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
                             <i data-lucide="home" class="w-4 h-4 text-emerald-800"></i> Раздел «Главная» — Профиль события
@@ -1322,123 +1433,142 @@
                         </p>
                     </div>
 
+                    <!-- Схема работы профиля -->
+                    <div class="bg-stone-50 border border-stone-200/50 rounded-2xl p-4 flex flex-col items-center justify-center gap-3">
+                        <span class="text-[9px] uppercase tracking-widest text-stone-400 font-extrabold">Схема интеграции данных</span>
+                        <div class="flex items-center gap-2 text-[10px] font-bold text-stone-600">
+                            <div class="bg-white border border-stone-200 px-3 py-1.5 rounded-xl text-center shadow-3xs">⚙️ Профиль</div>
+                            <div class="text-stone-400">➡️</div>
+                            <div class="bg-white border border-stone-200 px-3 py-1.5 rounded-xl text-center shadow-3xs">📊 Статистика</div>
+                            <div class="text-stone-400">➡️</div>
+                            <div class="bg-white border border-stone-200 px-3 py-1.5 rounded-xl text-center shadow-3xs">📂 База JSON</div>
+                        </div>
+                    </div>
+
                     <div class="space-y-3">
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">1</span>
                             <div>
                                 <strong class="text-stone-900 block">Редактирование профиля:</strong>
-                                Нажмите «Редактировать профиль» для ввода названия, даты, времени и выбора типа мероприятия (свадьба, день рождения и т.д.).
+                                Введите название, дату, время начала/окончания и выберите вид мероприятия (например, Свадьба, Юбилей).
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">2</span>
                             <div>
-                                <strong class="text-stone-900 block">Место проведения (Ресторан) & Карта:</strong>
-                                Введите адрес банкетного зала и привяжите ссылку на 2ГИС или Google Карты. В профиле автоматически появится кнопка для быстрой прокладки маршрута.
+                                <strong class="text-stone-900 block">Ресторан & Адресная карта:</strong>
+                                Укажите название банкетного зала и привяжите ссылку на 2ГИС/Яндекс.Карты для быстрой навигации гостей.
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">3</span>
                             <div>
-                                <strong class="text-stone-900 block">Бюджет и Гости:</strong>
-                                Введите планируемый лимит гостей, бюджет и валюту. Приложение автоматически рассчитает средний подарок гостя и будет опираться на эти данные в финансовых отчетах.
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">4</span>
-                            <div>
-                                <strong class="text-stone-900 block">Аналитика и Данные (Суб-вкладки):</strong>
-                                Переключайтесь на «Аналитику» для просмотра диаграммы распределения гостей по категориям или «Данные» для управления справочниками и импорта/экспорта в JSON.
+                                <strong class="text-stone-900 block">Управление базой:</strong>
+                                На суб-вкладке «Данные» вы можете импортировать или экспортировать весь проект в один клик через JSON.
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- СЛАЙД 2: ГОСТИ -->
-                <div id="help-slide-2" class="space-y-4 hidden animate-fadeIn">
+                <div id="help-slide-2" class="space-y-5 hidden animate-fadeIn">
                     <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
                         <h4 class="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
-                            <i data-lucide="users" class="w-4 h-4 text-emerald-800"></i> Раздел «Гости» — Справочник и фильтры
+                            <i data-lucide="users" class="w-4 h-4 text-emerald-800"></i> Раздел «Гости» — База приглашенных
                         </h4>
                         <p class="text-stone-700">
-                            Центральный пульт управления всеми приглашенными. Вы можете структурировать список и отслеживать статус рассадки каждого гостя.
+                            Центральный пульт управления всеми приглашенными с WhatsApp-связью, умной категоризацией и статусом рассадки.
                         </p>
+                    </div>
+
+                    <!-- Схема работы со списком -->
+                    <div class="bg-stone-50 border border-stone-200/50 rounded-2xl p-4 flex flex-col items-center justify-center gap-3">
+                        <span class="text-[9px] uppercase tracking-widest text-stone-400 font-extrabold">Управление гостем</span>
+                        <div class="flex items-center gap-2 text-[10px] font-bold text-stone-600">
+                            <div class="bg-white border border-stone-200 px-3 py-1.5 rounded-xl shadow-3xs">➕ Создание</div>
+                            <div class="text-stone-400">➡️</div>
+                            <div class="bg-white border border-stone-200 px-3 py-1.5 rounded-xl shadow-3xs">🏷️ Категория</div>
+                            <div class="text-stone-400">➡️</div>
+                            <div class="bg-emerald-800 text-white px-3 py-1.5 rounded-xl shadow-3xs">🪑 Рассадка</div>
+                        </div>
                     </div>
 
                     <div class="space-y-3">
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">1</span>
                             <div>
-                                <strong class="text-stone-900 block">Добавление гостей:</strong>
-                                Нажмите «Новый гость», введите ФИО, телефон (для быстрой связи через звонки или WhatsApp) и привяжите категорию и стол.
+                                <strong class="text-stone-900 block">Быстрая связь & WhatsApp:</strong>
+                                Если у гостя указан номер телефона, вы можете совершить обычный звонок или в один клик перейти к переписке в WhatsApp.
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">2</span>
                             <div>
-                                <strong class="text-stone-900 block">Переключатели отображения:</strong>
-                                Переключайте режимы отображения: **Список** (общая лента), **Столы** (гости сгруппированы по столам с возможностью сворачивания) и **Категории** (группировка по родственным или дружеским связям).
+                                <strong class="text-stone-900 block">Групповые операции (Массовые действия):</strong>
+                                Отметьте галочками нужных гостей. Снизу появится панель: сажайте за стол, меняйте категорию или удаляйте всю группу разом!
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">3</span>
-                            <div class="w-full">
-                                <strong class="text-stone-900 block">Массовые действия (Интерактивная панель):</strong>
-                                Выделите галочками нескольких гостей. Снизу мгновенно всплывет панель групповых действий:
-                                <div class="mt-1.5 flex gap-1 flex-wrap">
-                                    <span class="bg-emerald-50 text-emerald-800 border border-emerald-100 font-bold px-2 py-0.5 rounded text-[9px]"><i data-lucide="armchair" class="w-2.5 h-2.5 inline mr-0.5"></i> Посадить группу</span>
-                                    <span class="bg-stone-100 text-stone-700 border border-stone-200 font-bold px-2 py-0.5 rounded text-[9px]"><i data-lucide="tag" class="w-2.5 h-2.5 inline mr-0.5"></i> Изменить категорию</span>
-                                    <span class="bg-red-50 text-red-700 border border-red-100 font-bold px-2 py-0.5 rounded text-[9px]"><i data-lucide="trash-2" class="w-2.5 h-2.5 inline mr-0.5"></i> Удалить группу</span>
-                                </div>
+                            <div>
+                                <strong class="text-stone-900 block">Режимы отображения:</strong>
+                                Переключайтесь между общим списком, группировкой по столам (со сворачиванием) или группировкой по родственным категориям.
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- СЛАЙД 3: СТОЛЫ -->
-                <div id="help-slide-3" class="space-y-4 hidden animate-fadeIn">
+                <div id="help-slide-3" class="space-y-5 hidden animate-fadeIn">
                     <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
                         <h4 class="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
-                            <i data-lucide="armchair" class="w-4 h-4 text-emerald-800"></i> Раздел «Столы» — Справочник залов
+                            <i data-lucide="armchair" class="w-4 h-4 text-emerald-800"></i> Раздел «Столы» — Геометрия зала
                         </h4>
                         <p class="text-stone-700">
-                            Управляйте геометрией и лимитами вашего зала. Каждый стол имеет вместимость и может быть жестко закреплен за определенной категорией гостей.
+                            Создание столов, управление лимитами вместимости и быстрый инспектор рассадки каждого стола.
                         </p>
+                    </div>
+
+                    <!-- Схема карточки стола -->
+                    <div class="bg-stone-50 border border-stone-200/50 rounded-2xl p-4 flex flex-col items-center justify-center gap-3">
+                        <span class="text-[9px] uppercase tracking-widest text-stone-400 font-extrabold">Вид стола в списке</span>
+                        <div class="w-48 bg-white border border-stone-200 rounded-xl p-3 shadow-3xs space-y-2 text-[10px]">
+                            <div class="flex justify-between font-bold text-stone-850">
+                                <span>🍽️ Стол №1</span>
+                                <span class="text-emerald-800">5 / 8 мест</span>
+                            </div>
+                            <div class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-emerald-600 h-full w-[62%]"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="space-y-3">
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">1</span>
                             <div>
-                                <strong class="text-stone-900 block">Добавление и редактирование:</strong>
-                                Нажмите «Добавить стол», задайте его порядковый номер, вместимость (лимит мест) и назначьте категорию (например, «Друзья невесты»).
+                                <strong class="text-stone-900 block">Вместимость & Категории:</strong>
+                                Задайте лимит посадочных мест для каждого стола и привяжите категорию гостей, чтобы рассаживать родственные группы вместе.
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">2</span>
                             <div>
-                                <strong class="text-stone-900 block">Инспектор стола (Клик по карточке стола):</strong>
-                                Кликните на карточку стола, чтобы открыть инспектор стола. В нем отображен пофамильный список гостей за этим столом с возможностью их быстрой пересадки на другой свободный стол или снятия с рассадки.
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">3</span>
-                            <div>
-                                <strong class="text-stone-900 block">Индикатор заполняемости столов:</strong>
-                                Индикатор выполнения под каждым столом меняет цвет в зависимости от заполнения: **зеленый** (есть места), **оранжевый** (стол почти полон), **красный** (все места заняты).
+                                <strong class="text-stone-900 block">Инспектор стола:</strong>
+                                Нажмите на карточку любого стола, чтобы увидеть пофамильный список сидящих гостей и быстро пересадить или убрать кого-то.
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- СЛАЙД 4: СХЕМА ЗАЛА -->
-                <div id="help-slide-4" class="space-y-4 hidden animate-fadeIn">
+                <div id="help-slide-4" class="space-y-5 hidden animate-fadeIn">
                     <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
                         <h4 class="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
                             <i data-lucide="map" class="w-4 h-4 text-emerald-800"></i> Раздел «Схема зала» — Интерактивная 2D-карта
                         </h4>
                         <p class="text-stone-700">
-                            Уникальный визуальный инструмент для планирования рассадки на интерактивном холсте. Поддерживает адаптивные жесты для телефонов и ПК.
+                            Абсолютно интерактивный холст для свободного перемещения столов и мгновенной рассадки гостей на стулья.
                         </p>
                     </div>
 
@@ -1449,28 +1579,21 @@
                                 <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">1</span>
                                 <div>
                                     <strong class="text-stone-900 block">Перемещение столов:</strong>
-                                    Зажмите левую кнопку мыши (ЛКМ) на столе (или удерживайте пальцем) и тащите его в любое место на карте.
+                                    Зажмите ЛКМ на столе (или удерживайте пальцем) и тащите его в любое место на холсте.
                                 </div>
                             </div>
                             <div class="flex gap-2">
                                 <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">2</span>
                                 <div>
-                                    <strong class="text-stone-900 block">Перетаскивание зала:</strong>
-                                    Зажмите правую кнопку мыши (ПКМ) или тащите за пустой серый фон зала, чтобы свободно перемещать саму карту.
+                                    <strong class="text-stone-900 block">Стулья & Меню рассадки:</strong>
+                                    Нажмите на любой стул вокруг стола. Откроется радиальное меню, где можно быстро посадить или пересадить гостя!
                                 </div>
                             </div>
                             <div class="flex gap-2">
                                 <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">3</span>
                                 <div>
                                     <strong class="text-stone-900 block">Масштабирование (Zoom):</strong>
-                                    Крутите колесо мыши или используйте жест щипка на телефоне для приближения или отдаления схемы.
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">4</span>
-                                <div>
-                                    <strong class="text-stone-900 block">Быстрое меню стульев:</strong>
-                                    Кликните на любой стул: откроется красивое радиальное меню, где можно посадить гостя, пересадить его или выписать ФИО прямо на схеме!
+                                    Крутите колесико мыши или используйте жест «щипка» на экранах смартфонов для приближения зала.
                                 </div>
                             </div>
                         </div>
@@ -1490,43 +1613,55 @@
                             </div>
                             
                             <span class="text-[10px] text-stone-400 font-bold leading-normal">
-                                Зажмите и перетаскивайте столы по залу. Приближайте щипком на сенсорных экранах.
+                                Зажмите и свободно перетаскивайте столы по залу.
                             </span>
                         </div>
                     </div>
                 </div>
 
                 <!-- СЛАЙД 5: ФИНАНСЫ -->
-                <div id="help-slide-5" class="space-y-4 hidden animate-fadeIn">
+                <div id="help-slide-5" class="space-y-5 hidden animate-fadeIn">
                     <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 space-y-2">
                         <h4 class="font-extrabold text-emerald-950 text-sm flex items-center gap-1.5">
-                            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-800"></i> Раздел «Финансы» — Баланс и Смета
+                            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-800"></i> Раздел «Финансы» — Баланс торжества
                         </h4>
                         <p class="text-stone-700">
-                            Комплексный учет сметы расходов и доходов (подарков от гостей) с автоматическим расчетом окупаемости мероприятия в реальном времени.
+                            Учет сметы расходов, подарков гостей (приходы) и автоматический расчет окупаемости мероприятия в реальном времени.
                         </p>
+                    </div>
+
+                    <!-- Схема финансового баланса -->
+                    <div class="bg-stone-50 border border-stone-200/50 rounded-2xl p-4 flex flex-col items-center justify-center gap-3">
+                        <span class="text-[9px] uppercase tracking-widest text-stone-400 font-extrabold">Баланс события</span>
+                        <div class="flex items-center gap-2 text-[10px] font-bold text-stone-600">
+                            <div class="bg-white border border-stone-200 px-3 py-1.5 rounded-xl shadow-3xs text-rose-600">📉 Расходы</div>
+                            <div class="text-stone-400">⚖️</div>
+                            <div class="bg-white border border-stone-200 px-3 py-1.5 rounded-xl shadow-3xs text-emerald-600">📈 Подарки</div>
+                            <div class="text-stone-400">➡️</div>
+                            <div class="bg-emerald-800 text-white px-3 py-1.5 rounded-xl shadow-3xs">💰 Баланс</div>
+                        </div>
                     </div>
 
                     <div class="space-y-3">
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">1</span>
                             <div>
-                                <strong class="text-stone-900 block">Раздел «Сводка и Анализ»:</strong>
-                                Автоматически сопоставляет планируемые доходы (кол-во гостей × средний подарок) с фактическими подарками. Рассчитывает финансовый баланс и показывает, окупается ли ваше событие.
+                                <strong class="text-stone-900 block">Смета расходов (План / Факт):</strong>
+                                Добавляйте планируемые расходы и отмечайте фактические авансы или полные оплаты. Каждая статья привязывается к своей категории.
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">2</span>
                             <div>
-                                <strong class="text-stone-900 block">Учет расходов (План / Факт):</strong>
-                                Добавляйте планируемые расходы (смета) и фиксируйте фактическую оплату (авансы, предоплаты). Каждая статья привязывается к категории для построения сводного отчета.
+                                <strong class="text-stone-900 block">Подарки от гостей (Приходы):</strong>
+                                Удобный список всех гостей, где в одно касание можно внести сумму подарка (конверта), принесенного каждым гостем.
                             </div>
                         </div>
                         <div class="flex gap-2">
                             <span class="w-5 h-5 rounded-full bg-amber-400 text-emerald-950 flex items-center justify-center font-bold shrink-0">3</span>
                             <div>
-                                <strong class="text-stone-900 block">Учет приходов (Подарки гостей):</strong>
-                                Удобный список всех гостей с возможностью в один клик указать сумму денежного подарка (конверта) от каждого гостя. Суммы мгновенно учитываются в общем финансовом анализе.
+                                <strong class="text-stone-900 block">Сводный анализ:</strong>
+                                Приложение автоматически сопоставит бюджет, общие расходы и подарки, выведет чистую окупаемость торжества.
                             </div>
                         </div>
                     </div>

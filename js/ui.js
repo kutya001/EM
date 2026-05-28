@@ -242,6 +242,10 @@ function startOnboarding() {
     document.getElementById('onb-planned-guests').value = p.plannedGuests || 100;
     document.getElementById('onb-currency').value = p.currency || "KGS";
     document.getElementById('onb-avg-gift').value = p.avgGift || 3000;
+    
+    const useFin = p.useFinance !== false;
+    document.getElementById('onb-use-finance').checked = useFin;
+    toggleOnboardingFinanceFields(useFin);
 
     selectOnboardingStep(1);
     openModal('modal-onboarding');
@@ -323,6 +327,7 @@ function completeOnboarding() {
     const plannedGuests = parseInt(document.getElementById('onb-planned-guests').value) || 0;
     const currency = document.getElementById('onb-currency').value;
     const avgGift = parseFloat(document.getElementById('onb-avg-gift').value) || 0;
+    const useFinance = document.getElementById('onb-use-finance').checked;
 
     state.profile = {
         ...state.profile,
@@ -337,6 +342,7 @@ function completeOnboarding() {
         plannedGuests,
         currency,
         avgGift,
+        useFinance,
         eventTypes: state.profile ? (state.profile.eventTypes || ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"]) : ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"]
     };
 
@@ -370,6 +376,7 @@ function completeOnboarding() {
         el.innerText = currency;
     });
 
+    updateFinanceVisibility();
     renderAll();
     showToast("Мероприятие успешно создано! Приступайте к планированию.");
 }
@@ -389,6 +396,7 @@ async function onboardingLoadDemo() {
         subtitle.innerText = p.eventName ? p.eventName : "Система планирования мероприятий";
     }
     
+    updateFinanceVisibility();
     renderAll();
     showToast("Демонстрационные данные успешно загружены!");
 }
@@ -405,23 +413,100 @@ function confirmClearAllData() {
 
 function switchHelpTab(tabIdx) {
     const tabsCount = 5;
-    for (let i = 1; i <= tabsCount; i++) {
-        const slide = document.getElementById(`help-slide-${i}`);
-        if (slide) slide.classList.add('hidden');
+    const slideIndex = document.getElementById('help-slide-index');
+    const btnBack = document.getElementById('help-btn-back');
+
+    if (tabIdx === 0) {
+        // Show index/roadmap dashboard
+        if (slideIndex) slideIndex.classList.remove('hidden');
+        if (btnBack) btnBack.classList.add('hidden');
         
-        const btn = document.getElementById(`help-tab-btn-${i}`);
-        if (btn) {
-            btn.className = "flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50";
+        for (let i = 1; i <= tabsCount; i++) {
+            const slide = document.getElementById(`help-slide-${i}`);
+            if (slide) slide.classList.add('hidden');
+        }
+    } else {
+        // Show specific help page slide
+        if (slideIndex) slideIndex.classList.add('hidden');
+        if (btnBack) btnBack.classList.remove('hidden');
+        
+        for (let i = 1; i <= tabsCount; i++) {
+            const slide = document.getElementById(`help-slide-${i}`);
+            if (slide) {
+                if (i === tabIdx) slide.classList.remove('hidden');
+                else slide.classList.add('hidden');
+            }
         }
     }
     
-    const activeSlide = document.getElementById(`help-slide-${tabIdx}`);
-    if (activeSlide) activeSlide.classList.remove('hidden');
-    
-    const activeBtn = document.getElementById(`help-tab-btn-${tabIdx}`);
-    if (activeBtn) {
-        activeBtn.className = "flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 bg-white text-emerald-850 shadow-xs border border-stone-200/40";
+    // Highlight roadmap steps dynamically if present
+    for (let i = 1; i <= tabsCount; i++) {
+        const stepBadge = document.getElementById(`roadmap-step-badge-${i}`);
+        if (stepBadge) {
+            if (tabIdx === i) {
+                stepBadge.classList.add('roadmap-step-active');
+            } else {
+                stepBadge.classList.remove('roadmap-step-active');
+            }
+        }
     }
     
     lucide.createIcons();
+}
+
+function updateFinanceVisibility() {
+    const useFinance = state.profile && state.profile.useFinance !== false;
+    
+    // PC tab button
+    const pcFinBtn = document.getElementById('pc-btn-tab-finance');
+    if (pcFinBtn) {
+        if (useFinance) pcFinBtn.classList.remove('hidden');
+        else pcFinBtn.classList.add('hidden');
+    }
+    
+    // Mobile tab button
+    const mbFinBtn = document.getElementById('btn-tab-finance');
+    if (mbFinBtn) {
+        if (useFinance) mbFinBtn.classList.remove('hidden');
+        else mbFinBtn.classList.add('hidden');
+    }
+
+    // Profile page financial stats card
+    const viewBudgetCard = document.getElementById('profile-view-budget-card');
+    if (viewBudgetCard) {
+        if (useFinance) viewBudgetCard.classList.remove('hidden');
+        else viewBudgetCard.classList.add('hidden');
+    }
+
+    // Profile edit budget fields
+    const editBudgetContainer = document.getElementById('profile-edit-budget-container');
+    if (editBudgetContainer) {
+        if (useFinance) editBudgetContainer.classList.remove('hidden');
+        else editBudgetContainer.classList.add('hidden');
+    }
+
+    // Help index financial elements
+    const helpFinCard = document.getElementById('help-index-card-finance');
+    if (helpFinCard) {
+        if (useFinance) helpFinCard.classList.remove('hidden');
+        else helpFinCard.classList.add('hidden');
+    }
+    const helpFinStep = document.getElementById('roadmap-step-btn-5');
+    if (helpFinStep) {
+        if (useFinance) helpFinStep.classList.remove('hidden');
+        else helpFinStep.classList.add('hidden');
+    }
+
+    // Force switch tab if on finance and it is disabled
+    if (!useFinance && currentTab === 'finance') {
+        switchTab('profile');
+    }
+}
+
+function toggleOnboardingFinanceFields(checked) {
+    const container = document.getElementById('onb-financial-fields-container');
+    if (container) {
+        if (checked) container.classList.remove('hidden');
+        else container.classList.add('hidden');
+    }
 }

@@ -41,7 +41,8 @@ const defaultProfile = {
     avgGift: 3000,
     plannedGuests: 100,
     venueName: "",
-    venueLink: ""
+    venueLink: "",
+    useFinance: true
 };
 
 const defaultExpenses = [
@@ -176,7 +177,8 @@ function clearAllData() {
         avgGift: 0,
         plannedGuests: 0,
         venueName: "",
-        venueLink: ""
+        venueLink: "",
+        useFinance: true
     };
     state.finance = {
         expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
