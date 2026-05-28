@@ -20,11 +20,11 @@ const defaultTables = [
 ];
 
 const defaultGuests = [
-    { id: "gst-1", name: "Данияров Кутман", phone: "+77071112233", giftAmount: 4000, categoryId: "cat-5", tableId: "tbl-2", seatIndex: 0 },
+    { id: "gst-1", name: "Данияров Азамат", phone: "+996707111223", giftAmount: 4000, categoryId: "cat-5", tableId: "tbl-2", seatIndex: 0 },
     { id: "gst-2", name: "Калиматова Асель", phone: "", giftAmount: 0, categoryId: "cat-1", tableId: "tbl-1", seatIndex: 0 },
-    { id: "gst-3", name: "Макеев Бексултан", phone: "+77779998877", giftAmount: 5000, categoryId: "cat-5", tableId: "tbl-2", seatIndex: 1 },
+    { id: "gst-3", name: "Макеев Бексултан", phone: "+996777999887", giftAmount: 5000, categoryId: "cat-5", tableId: "tbl-2", seatIndex: 1 },
     { id: "gst-4", name: "Исаев Каныбек", phone: "", giftAmount: 0, categoryId: "cat-7", tableId: "none", seatIndex: -1 },
-    { id: "gst-5", name: "Смагулова Жанар", phone: "+77015554433", giftAmount: 10000, categoryId: "cat-3", tableId: "none", seatIndex: -1 },
+    { id: "gst-5", name: "Смагулова Жанар", phone: "+996555555443", giftAmount: 10000, categoryId: "cat-3", tableId: "none", seatIndex: -1 },
     { id: "gst-6", name: "Осмонов Нурбек", phone: "", giftAmount: 0, categoryId: "cat-2", tableId: "tbl-1", seatIndex: 1 },
     { id: "gst-7", name: "Даниярова Чолпон", phone: "", giftAmount: 3000, categoryId: "cat-4", tableId: "none", seatIndex: -1 }
 ];
