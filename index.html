@@ -18,7 +18,7 @@
 <body class="bg-zinc-100 text-stone-850 flex flex-col min-h-screen pb-28 select-none">
 
     <!-- ХЕДЕР С АДАПТИВНЫМ МЕНЮ ДЛЯ ПК (ОСТРОВОК) -->
-    <header class="glass-panel-dark text-amber-50 island-card mx-4 my-4 sticky top-4 z-30 px-5 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 border border-emerald-900/40">
+    <header class="glass-panel-dark text-amber-50 island-card mx-2 md:mx-4 mt-2 mb-3.5 sticky top-2 z-30 px-4 py-2.5 flex flex-col md:flex-row items-center justify-between gap-2.5 border border-emerald-900/40">
         <div class="flex items-center justify-between w-full md:w-auto">
             <div>
                 <span class="text-[10px] uppercase tracking-widest text-emerald-300 font-bold block" id="header-subtitle">Система планирования мероприятий</span>
@@ -71,7 +71,7 @@
     </header>
 
     <!-- ГЛАВНЫЙ КОНТЕНТ -->
-    <main class="flex-1 max-w-md md:max-w-6xl w-full mx-auto px-4 py-2 space-y-4 animate-fadeIn">
+    <main class="flex-1 max-w-md md:max-w-6xl w-full mx-auto px-2 md:px-4 py-1.5 md:py-2 space-y-4 animate-fadeIn">
 
         <!-- ВКЛАДКА 0: ГЛАВНАЯ (ПРОФИЛЬ, АНАЛИТИКА, НАСТРОЙКИ БД) -->
         <section id="tab-profile" class="tab-content space-y-4">
@@ -1150,13 +1150,20 @@
                 
                 <!-- ШАГ 1 -->
                 <div id="onb-step-1" class="space-y-4">
-                    <div class="space-y-2 text-center pb-2">
+                    <div class="space-y-2 text-center pb-1">
                         <p class="text-stone-700 text-sm font-bold leading-normal">
                             Приветствую! 🎉 Это умный помощник для планирования и рассадки вашего мероприятия.
                         </p>
                         <p class="text-[10px] text-stone-400 font-semibold leading-relaxed">
                             Мы проведем вас за руку по ключевым этапам настройки. Вы также можете в любой момент загрузить готовый демо-проект.
                         </p>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200/50 p-3 rounded-2xl flex items-start gap-2.5">
+                        <i data-lucide="help-circle" class="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5 help-badge-pulse"></i>
+                        <div class="text-[10px] leading-normal font-semibold text-stone-600">
+                            Рекомендуем сначала открыть <button type="button" onclick="openModal('modal-help'); switchHelpTab(0);" class="text-emerald-800 hover:text-emerald-950 font-bold underline inline-flex items-center gap-0.5">интерактивную инструкцию</button>, чтобы легко и правильно настроить все разделы.
+                        </div>
                     </div>
                     
                     <div class="space-y-1.5">
@@ -1177,6 +1184,9 @@
                     </div>
 
                     <div class="pt-4 border-t border-stone-100 flex flex-col gap-2">
+                        <button type="button" onclick="openModal('modal-help'); switchHelpTab(0);" class="w-full bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-extrabold py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition">
+                            <i data-lucide="help-circle" class="w-4 h-4 text-emerald-800"></i> Читать подробную инструкцию
+                        </button>
                         <button type="button" onclick="onboardingLoadDemo()" class="w-full bg-amber-500 hover:bg-amber-400 text-emerald-950 text-xs font-extrabold py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs">
                             <i data-lucide="sparkles" class="w-4 h-4"></i> Смотреть демонстративные данные
                         </button>
@@ -1670,10 +1680,10 @@
             </div>
 
             <!-- Подвал инструкции -->
-            <div class="p-5 border-t border-stone-150 bg-stone-50 shrink-0 flex items-center justify-between">
+            <div id="help-modal-footer" class="p-5 border-t border-stone-150 bg-stone-50 shrink-0 flex items-center justify-between">
                 <span class="text-[10px] text-stone-400 font-bold">EM Pro v3 — Создано для идеальных событий</span>
                 <button type="button" onclick="closeModal('modal-help')" class="bg-emerald-800 text-white text-xs font-bold py-2.5 px-5 rounded-xl hover:bg-emerald-700 active:scale-95 transition shadow-sm">
-                    Понятно, закрыть
+                    Понятно, завершить
                 </button>
             </div>
 

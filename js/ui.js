@@ -451,7 +451,48 @@ function switchHelpTab(tabIdx) {
         }
     }
     
+    // Dynamic Footer update
+    updateHelpModalFooter(tabIdx);
+    
     lucide.createIcons();
+}
+
+function updateHelpModalFooter(tabIdx) {
+    const footer = document.getElementById('help-modal-footer');
+    if (!footer) return;
+
+    if (tabIdx === 0) {
+        footer.innerHTML = `
+            <span class="text-[10px] text-stone-400 font-bold">EM Pro v3 — Создано для идеальных событий</span>
+            <button type="button" onclick="closeModal('modal-help')" class="bg-emerald-800 text-white text-xs font-bold py-2.5 px-5 rounded-xl hover:bg-emerald-700 active:scale-95 transition shadow-sm">
+                Понятно, завершить
+            </button>
+        `;
+    } else {
+        const useFinance = state.profile && state.profile.useFinance !== false;
+        
+        let nextAction = "";
+        let nextText = "Далее";
+        
+        if (tabIdx === 5) {
+            nextAction = "closeModal('modal-help')";
+            nextText = "Понятно, завершить";
+        } else if (tabIdx === 4 && !useFinance) {
+            nextAction = "closeModal('modal-help')";
+            nextText = "Понятно, завершить";
+        } else {
+            nextAction = `switchHelpTab(${tabIdx + 1})`;
+        }
+        
+        footer.innerHTML = `
+            <button type="button" onclick="switchHelpTab(${tabIdx - 1})" class="bg-white border border-stone-200 text-stone-700 text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-stone-100 active:scale-95 transition">
+                Назад
+            </button>
+            <button type="button" onclick="${nextAction}" class="bg-emerald-800 text-white text-xs font-bold py-2.5 px-5 rounded-xl hover:bg-emerald-700 active:scale-95 transition shadow-sm">
+                ${nextText}
+            </button>
+        `;
+    }
 }
 
 function updateFinanceVisibility() {
