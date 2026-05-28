@@ -402,3 +402,26 @@ function confirmClearAllData() {
         }
     );
 }
+
+function switchHelpTab(tabIdx) {
+    const tabsCount = 5;
+    for (let i = 1; i <= tabsCount; i++) {
+        const slide = document.getElementById(`help-slide-${i}`);
+        if (slide) slide.classList.add('hidden');
+        
+        const btn = document.getElementById(`help-tab-btn-${i}`);
+        if (btn) {
+            btn.className = "flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50";
+        }
+    }
+    
+    const activeSlide = document.getElementById(`help-slide-${tabIdx}`);
+    if (activeSlide) activeSlide.classList.remove('hidden');
+    
+    const activeBtn = document.getElementById(`help-tab-btn-${tabIdx}`);
+    if (activeBtn) {
+        activeBtn.className = "flex-1 text-center py-2 px-1 rounded-xl text-[10px] font-extrabold transition-all duration-200 bg-white text-emerald-850 shadow-xs border border-stone-200/40";
+    }
+    
+    lucide.createIcons();
+}
