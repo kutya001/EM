@@ -17,14 +17,14 @@ function switchMainSubTab(subTabId) {
     btnIds.forEach(id => {
         const btn = document.getElementById(`subtab-btn-${id}`);
         if (btn) {
-            btn.className = "flex-1 text-center py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50";
+            btn.className = "flex-1 text-center py-1.5 px-2 rounded-lg text-xs font-bold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50";
         }
     });
 
     // Подсвечиваем активную
     const activeBtn = document.getElementById(`subtab-btn-${subTabId}`);
     if (activeBtn) {
-        activeBtn.className = "flex-1 text-center py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200 bg-white text-emerald-850 shadow-xs border border-stone-200/40";
+        activeBtn.className = "flex-1 text-center py-1.5 px-2 rounded-lg text-xs font-bold transition-all duration-200 bg-white text-emerald-850 shadow-2xs border border-stone-200/40";
     }
 
     if (subTabId === 'stats') {

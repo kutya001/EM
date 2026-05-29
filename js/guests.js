@@ -10,9 +10,9 @@ function switchGuestsViewMode(mode) {
         const btn = document.getElementById(`subtab-btn-${m}`);
         if (btn) {
             if (m === mode) {
-                btn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-sm";
+                btn.className = "flex-1 justify-center text-center py-2 px-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-sm";
             } else {
-                btn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 bg-stone-100 hover:bg-stone-200 hover:text-stone-900";
+                btn.className = "flex-1 justify-center text-center py-2 px-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900";
             }
         }
     });
