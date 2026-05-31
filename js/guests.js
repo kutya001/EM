@@ -10,9 +10,9 @@ function switchGuestsViewMode(mode) {
         const btn = document.getElementById(`subtab-btn-${m}`);
         if (btn) {
             if (m === mode) {
-                btn.className = "flex-1 justify-center text-center py-2 px-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-sm";
+                btn.className = "flex-1 justify-center text-center py-1 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-xs";
             } else {
-                btn.className = "flex-1 justify-center text-center py-2 px-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900";
+                btn.className = "flex-1 justify-center text-center py-1 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 text-stone-600 hover:text-stone-900";
             }
         }
     });
@@ -91,6 +91,24 @@ function renderGuests() {
     const filtered = getFilteredGuests();
     document.getElementById('total-guests-count').innerText = filtered.length;
 
+    // Toggle active filter dot
+    const query = document.getElementById('search-input') ? document.getElementById('search-input').value.trim() : '';
+    const filterCat = document.getElementById('filter-category') ? document.getElementById('filter-category').value : 'all';
+    const filterTbl = document.getElementById('filter-table') ? document.getElementById('filter-table').value : 'all';
+    const hasActiveFilters = query !== '' || filterCat !== 'all' || filterTbl !== 'all';
+    const activeDot = document.getElementById('guests-filters-active-dot');
+    if (activeDot) {
+        if (hasActiveFilters) activeDot.classList.remove('hidden');
+        else activeDot.classList.add('hidden');
+    }
+
+    // Toggle select-all checkbox checked state
+    const allSelected = filtered.length > 0 && filtered.every(g => selectedGuests.has(g.id));
+    const selectAllCb = document.getElementById('select-all-cb');
+    if (selectAllCb) {
+        selectAllCb.checked = allSelected;
+    }
+
     if (filtered.length === 0) {
         empty.classList.remove('hidden');
         return;
@@ -98,18 +116,6 @@ function renderGuests() {
     empty.classList.add('hidden');
 
     if (guestsViewMode === 'list') {
-        const allSelected = filtered.length > 0 && filtered.every(g => selectedGuests.has(g.id));
-        const selectAllDiv = document.createElement('div');
-        selectAllDiv.className = 'col-span-full flex items-center justify-between px-3 py-2 bg-stone-150/60 rounded-xl text-xs font-bold text-stone-500 border border-stone-200/40 shadow-xs';
-        selectAllDiv.innerHTML = `
-            <div class="flex items-center gap-2">
-                <input type="checkbox" id="select-all-cb" ${allSelected ? 'checked' : ''} onchange="toggleSelectAllVisible()"
-                       class="w-5 h-5 text-emerald-800 bg-white border-stone-300 rounded-md focus:ring-emerald-700">
-                <label for="select-all-cb" class="cursor-pointer font-bold">Выбрать всех видимых гостей</label>
-            </div>
-        `;
-        list.appendChild(selectAllDiv);
-
         filtered.forEach(guest => {
             list.appendChild(createGuestCard(guest));
         });

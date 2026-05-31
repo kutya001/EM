@@ -258,16 +258,28 @@ function selectOnboardingStep(stepIdx) {
         const slide = document.getElementById(`onb-step-${i}`);
         if (slide) slide.classList.add('hidden');
         
-        const dot = document.getElementById(`onb-dot-${i}`);
-        if (dot) {
-            dot.className = `w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                i === stepIdx ? 'bg-amber-400 w-6' : 'bg-stone-300'
-            }`;
+        // Обновление стилей заголовков шагов в верхнем степпере
+        const title = document.getElementById(`onb-step-title-${i}`);
+        if (title) {
+            if (i === stepIdx) {
+                title.className = "flex-1 text-center font-extrabold text-emerald-800 scale-105 transition-all duration-300 text-[10px] md:text-xs";
+            } else if (i < stepIdx) {
+                title.className = "flex-1 text-center font-bold text-stone-500 transition-all duration-300 text-[10px] md:text-xs";
+            } else {
+                title.className = "flex-1 text-center font-medium text-stone-400 transition-all duration-300 text-[10px] md:text-xs";
+            }
         }
     }
     
     const currentSlide = document.getElementById(`onb-step-${stepIdx}`);
     if (currentSlide) currentSlide.classList.remove('hidden');
+    
+    // Обновление ширины заполнения прогресс-бара сверху
+    const progressPercent = (stepIdx / onboardingTotalSteps) * 100;
+    const progressBar = document.getElementById('onb-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+    }
     
     const btnPrev = document.getElementById('onb-btn-prev');
     const btnNext = document.getElementById('onb-btn-next');
@@ -415,11 +427,13 @@ function switchHelpTab(tabIdx) {
     const tabsCount = 5;
     const slideIndex = document.getElementById('help-slide-index');
     const btnBack = document.getElementById('help-btn-back');
+    const topStepper = document.getElementById('help-top-stepper');
 
     if (tabIdx === 0) {
         // Show index/roadmap dashboard
         if (slideIndex) slideIndex.classList.remove('hidden');
         if (btnBack) btnBack.classList.add('hidden');
+        if (topStepper) topStepper.classList.add('hidden');
         
         for (let i = 1; i <= tabsCount; i++) {
             const slide = document.getElementById(`help-slide-${i}`);
@@ -429,6 +443,7 @@ function switchHelpTab(tabIdx) {
         // Show specific help page slide
         if (slideIndex) slideIndex.classList.add('hidden');
         if (btnBack) btnBack.classList.remove('hidden');
+        if (topStepper) topStepper.classList.remove('hidden');
         
         for (let i = 1; i <= tabsCount; i++) {
             const slide = document.getElementById(`help-slide-${i}`);
@@ -436,6 +451,25 @@ function switchHelpTab(tabIdx) {
                 if (i === tabIdx) slide.classList.remove('hidden');
                 else slide.classList.add('hidden');
             }
+            
+            // Обновление стилей заголовков шагов в верхнем степпере инструкции
+            const title = document.getElementById(`help-step-title-${i}`);
+            if (title) {
+                if (i === tabIdx) {
+                    title.className = "flex-1 text-center font-extrabold text-emerald-800 scale-105 transition-all duration-300 text-[10px] md:text-xs";
+                } else if (i < tabIdx) {
+                    title.className = "flex-1 text-center font-bold text-stone-500 transition-all duration-300 text-[10px] md:text-xs";
+                } else {
+                    title.className = "flex-1 text-center font-medium text-stone-400 transition-all duration-300 text-[10px] md:text-xs";
+                }
+            }
+        }
+        
+        // Обновление ширины заполнения прогресс-бара сверху инструкции
+        const progressPercent = (tabIdx / tabsCount) * 100;
+        const progressBar = document.getElementById('help-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${progressPercent}%`;
         }
     }
     
@@ -538,6 +572,13 @@ function updateFinanceVisibility() {
         else helpFinStep.classList.add('hidden');
     }
 
+    // Hide/show profile database categories card for expenses
+    const dbExpCatBtn = document.getElementById('profile-db-btn-expense-categories');
+    if (dbExpCatBtn) {
+        if (useFinance) dbExpCatBtn.classList.remove('hidden');
+        else dbExpCatBtn.classList.add('hidden');
+    }
+
     // Force switch tab if on finance and it is disabled
     if (!useFinance && currentTab === 'finance') {
         switchTab('profile');
@@ -549,5 +590,15 @@ function toggleOnboardingFinanceFields(checked) {
     if (container) {
         if (checked) container.classList.remove('hidden');
         else container.classList.add('hidden');
+    }
+}
+
+function toggleGuestsFiltersDrawer() {
+    const drawer = document.getElementById('guests-filters-drawer');
+    if (!drawer) return;
+    drawer.classList.toggle('hidden');
+    if (!drawer.classList.contains('hidden')) {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) searchInput.focus();
     }
 }

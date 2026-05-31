@@ -12,9 +12,9 @@ function switchFinanceTab(tab) {
         const btn = document.getElementById(`fintab-btn-${t}`);
         if (btn) {
             if (t === tab) {
-                btn.className = "flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 bg-emerald-800 text-white shadow-sm";
+                btn.className = "flex-1 text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition bg-emerald-800 text-white shadow-xs flex items-center justify-center gap-1";
             } else {
-                btn.className = "flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50";
+                btn.className = "flex-1 text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 flex items-center justify-center gap-1";
             }
         }
     });

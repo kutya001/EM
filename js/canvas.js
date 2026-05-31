@@ -58,6 +58,17 @@ function initCanvas() {
     canvas = document.getElementById('seating-canvas');
     if (!canvas) return;
     ctx = canvas.getContext('2d');
+
+    // Динамическая адаптация инструкции для мобильных / ПК
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const helperText = document.getElementById('schema-helper-text');
+    if (helperText) {
+        if (isTouch) {
+            helperText.innerHTML = `💡 <strong>Управление на телефоне:</strong> Перетаскивайте столы пальцем. Масштабируйте жестом двух пальцев (pinch). Удерживайте стул 400мс, чтобы "поднять" гостя для пересадки.`;
+        } else {
+            helperText.innerHTML = `💡 <strong>Управление на ПК:</strong> Двигайте столы на <strong>ЛКМ</strong>. Двигайте сам зал на <strong>ПКМ</strong> или свободный фон. Колесо мыши / жест двумя пальцами — <strong>масштаб</strong>. Клик на стул выводит подсказку. Зажатие на 150мс поднимает гостя.`;
+        }
+    }
     
     if (!canvasEventsInitialized) {
         canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); });

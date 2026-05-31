@@ -12,19 +12,19 @@ function switchMainSubTab(subTabId) {
     const activeSubTab = document.getElementById(`main-subtab-${subTabId}`);
     if (activeSubTab) activeSubTab.classList.remove('hidden');
 
-    // Сбрасываем стили кнопок переключателя
+    // Сбросить стили кнопок переключателя
     const btnIds = ['profile', 'stats', 'database'];
     btnIds.forEach(id => {
         const btn = document.getElementById(`subtab-btn-${id}`);
         if (btn) {
-            btn.className = "flex-1 text-center py-1.5 px-2 rounded-lg text-xs font-bold transition-all duration-200 text-stone-500 hover:text-stone-850 hover:bg-stone-200/50";
+            btn.className = "flex-1 text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition-all duration-200 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 flex items-center justify-center gap-1";
         }
     });
 
     // Подсвечиваем активную
     const activeBtn = document.getElementById(`subtab-btn-${subTabId}`);
     if (activeBtn) {
-        activeBtn.className = "flex-1 text-center py-1.5 px-2 rounded-lg text-xs font-bold transition-all duration-200 bg-white text-emerald-850 shadow-2xs border border-stone-200/40";
+        activeBtn.className = "flex-1 text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition-all duration-200 bg-emerald-800 text-white shadow-2xs flex items-center justify-center gap-1";
     }
 
     if (subTabId === 'stats') {
