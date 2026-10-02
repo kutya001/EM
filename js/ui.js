@@ -223,6 +223,16 @@ function drawRoundedRect(x, y, width, height, radius, fill, stroke) {
     if (stroke) ctx.stroke();
 }
 
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // --- ИНТЕРАКТИВНЫЙ ОНБОРДИНГ (МАСТЕР ВВОДА ДАННЫХ) ---
 var onboardingCurrentStep = 1;
 const onboardingTotalSteps = 4;
@@ -246,6 +256,11 @@ function startOnboarding() {
     const useFin = p.useFinance !== false;
     document.getElementById('onb-use-finance').checked = useFin;
     toggleOnboardingFinanceFields(useFin);
+
+    const onbPhones = document.getElementById('onb-track-phones');
+    if (onbPhones) onbPhones.checked = p.trackPhones !== false;
+    const onbCats = document.getElementById('onb-track-categories');
+    if (onbCats) onbCats.checked = p.trackCategories !== false;
 
     selectOnboardingStep(1);
     openModal('modal-onboarding');
@@ -340,6 +355,13 @@ function completeOnboarding() {
     const currency = document.getElementById('onb-currency').value;
     const avgGift = parseFloat(document.getElementById('onb-avg-gift').value) || 0;
     const useFinance = document.getElementById('onb-use-finance').checked;
+    const onbPhones = document.getElementById('onb-track-phones');
+    const trackPhones = onbPhones ? onbPhones.checked : true;
+    const onbCats = document.getElementById('onb-track-categories');
+    const trackCategories = onbCats ? onbCats.checked : true;
+
+    let eventTypesList = state.profile && state.profile.eventTypes ? [...state.profile.eventTypes] : ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"];
+    if (!eventTypesList.includes("Прочее")) eventTypesList.push("Прочее");
 
     state.profile = {
         ...state.profile,
@@ -355,7 +377,9 @@ function completeOnboarding() {
         currency,
         avgGift,
         useFinance,
-        eventTypes: state.profile ? (state.profile.eventTypes || ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"]) : ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"]
+        trackPhones,
+        trackCategories,
+        eventTypes: eventTypesList
     };
 
     if (!state.categories || state.categories.length === 0) {

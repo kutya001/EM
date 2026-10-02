@@ -68,6 +68,11 @@ function setProfileEditMode(isEdit) {
             toggleEl.checked = useFin;
             toggleProfileFinanceFields(useFin);
         }
+
+        const phoneEl = document.getElementById('profile-track-phones');
+        if (phoneEl) phoneEl.checked = p.trackPhones !== false;
+        const catEl = document.getElementById('profile-track-categories');
+        if (catEl) catEl.checked = p.trackCategories !== false;
         
         updateProfileDropdowns();
         document.getElementById('profile-event-type').value = p.eventType || "Свадьба";
@@ -150,7 +155,13 @@ function initProfileUI() {
 
 function updateProfileDropdowns() {
     const select = document.getElementById('profile-event-type');
+    if (!select) return;
     select.innerHTML = "";
+    if (!state.profile.eventTypes) {
+        state.profile.eventTypes = ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"];
+    } else if (!state.profile.eventTypes.includes("Прочее")) {
+        state.profile.eventTypes.push("Прочее");
+    }
     state.profile.eventTypes.forEach(type => {
         const opt = document.createElement('option');
         opt.value = type;
@@ -176,11 +187,16 @@ function handleSaveProfile(event) {
 
     const useFinanceEl = document.getElementById('profile-use-finance');
     const useFinance = useFinanceEl ? useFinanceEl.checked : true;
+    const phoneEl = document.getElementById('profile-track-phones');
+    const trackPhones = phoneEl ? phoneEl.checked : true;
+    const catEl = document.getElementById('profile-track-categories');
+    const trackCategories = catEl ? catEl.checked : true;
 
     state.profile = {
         ...state.profile,
         eventName, date, timeStart, timeEnd, eventType,
-        venueName, venueLink, budget, plannedGuests, currency, avgGift, useFinance
+        venueName, venueLink, budget, plannedGuests, currency, avgGift, useFinance,
+        trackPhones, trackCategories
     };
 
     saveState();

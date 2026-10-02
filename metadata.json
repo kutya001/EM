@@ -1,0 +1,8 @@
+{
+  "name": "Event Management (EM) Pro",
+  "description": "Система планирования мероприятий: рассадка гостей, интерактивная схема зала, профиль торжества и учет финансов.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

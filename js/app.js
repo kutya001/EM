@@ -24,7 +24,7 @@ function initApp() {
                 timeStart: "",
                 timeEnd: "",
                 eventType: "Свадьба",
-                eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"],
+                eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"],
                 budget: 0,
                 currency: "KGS",
                 avgGift: 0,
@@ -47,6 +47,17 @@ function initApp() {
     }
     if (state.profile.plannedGuests === undefined) {
         state.profile.plannedGuests = state.guests.length > 0 ? state.guests.length : 100;
+    }
+    if (state.profile.trackPhones === undefined) {
+        state.profile.trackPhones = true;
+    }
+    if (state.profile.trackCategories === undefined) {
+        state.profile.trackCategories = true;
+    }
+    if (!state.profile.eventTypes) {
+        state.profile.eventTypes = ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"];
+    } else if (!state.profile.eventTypes.includes("Прочее")) {
+        state.profile.eventTypes.push("Прочее");
     }
     if (!state.finance) {
         state.finance = {

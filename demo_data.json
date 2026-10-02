@@ -40,13 +40,15 @@
     "timeStart": "18:00",
     "timeEnd": "23:59",
     "eventType": "Свадьба",
-    "eventTypes": ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"],
+    "eventTypes": ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"],
     "budget": 600000,
     "currency": "KGS",
     "avgGift": 4000,
     "plannedGuests": 120,
     "venueName": "Ресторан Ала-Тоо",
-    "venueLink": "https://2gis.kg/bishkek/firm/70000001019349887"
+    "venueLink": "https://2gis.kg/bishkek/firm/70000001019349887",
+    "trackPhones": true,
+    "trackCategories": true
   },
   "finance": {
     "expenseCategories": ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],

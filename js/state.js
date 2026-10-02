@@ -35,14 +35,16 @@ const defaultProfile = {
     timeStart: "",
     timeEnd: "",
     eventType: "Свадьба",
-    eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"],
+    eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"],
     budget: 500000,
     currency: "KGS",
     avgGift: 3000,
     plannedGuests: 100,
     venueName: "",
     venueLink: "",
-    useFinance: true
+    useFinance: true,
+    trackPhones: true,
+    trackCategories: true
 };
 
 const defaultExpenses = [
@@ -171,14 +173,16 @@ function clearAllData() {
         timeStart: "",
         timeEnd: "",
         eventType: "Свадьба",
-        eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей"],
+        eventTypes: ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"],
         budget: 0,
         currency: "KGS",
         avgGift: 0,
         plannedGuests: 0,
         venueName: "",
         venueLink: "",
-        useFinance: true
+        useFinance: true,
+        trackPhones: true,
+        trackCategories: true
     };
     state.finance = {
         expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],

@@ -64,6 +64,8 @@ function renderTables() {
 }
 
 // --- CRUD столов ---
+let isNewTableInModal = false;
+
 function openTableModal(tableId = null) {
     const title = document.getElementById('table-modal-title');
     const idInput = document.getElementById('edit-table-id');
@@ -75,6 +77,7 @@ function openTableModal(tableId = null) {
     updateDropdowns();
 
     if (tableId) {
+        isNewTableInModal = false;
         const table = state.tables.find(t => t.id === tableId);
         title.innerText = "Редактировать стол";
         idInput.value = table.id;
@@ -83,15 +86,246 @@ function openTableModal(tableId = null) {
         capInput.value = table.capacity;
         catSelect.value = table.categoryId || 'none';
     } else {
+        isNewTableInModal = true;
         title.innerText = "Новый стол";
-        idInput.value = "";
         const nextNum = state.tables.length > 0 ? Math.max(...state.tables.map(t => t.number || 0)) + 1 : 1;
+        const newId = 'tbl-' + Date.now();
+        idInput.value = newId;
         numInput.value = nextNum;
         nameInput.value = "";
         capInput.value = "10";
         catSelect.value = "none";
+
+        // Заранее регистрируем стол в state, чтобы к нему можно было сразу привязать гостей
+        state.tables.push({
+            id: newId,
+            number: nextNum,
+            name: "",
+            capacity: 10,
+            categoryId: "none",
+            x: 260,
+            y: 300
+        });
     }
+
+    renderTableModalGuests(idInput.value);
+    hideTableInlineAddGuest();
+    hideTableBulkPaste();
+
+    // Навешиваем обработчик клавиш для быстрого ввода (Enter/Esc)
+    setTimeout(() => {
+        const inlineInput = document.getElementById('table-inline-guest-input');
+        if (inlineInput && !inlineInput.dataset.bound) {
+            inlineInput.dataset.bound = "true";
+            inlineInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    submitTableInlineGuest();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    hideTableInlineAddGuest();
+                }
+            });
+        }
+    }, 50);
+
     openModal('modal-table');
+}
+
+function handleCloseTableModal() {
+    const idInput = document.getElementById('edit-table-id');
+    const tableId = idInput ? idInput.value : null;
+
+    if (isNewTableInModal && tableId) {
+        const table = state.tables.find(t => t.id === tableId);
+        const guestsAtTbl = state.guests.filter(g => g.tableId === tableId);
+        // Если стол новый, без названия и без гостей — удаляем временную запись
+        if (table && (!table.name || table.name.trim() === '') && guestsAtTbl.length === 0) {
+            state.tables = state.tables.filter(t => t.id !== tableId);
+        }
+    }
+    isNewTableInModal = false;
+    closeModal('modal-table');
+}
+
+function renderTableModalGuests(tableId) {
+    const list = document.getElementById('table-modal-guests-list');
+    const countEl = document.getElementById('table-modal-guests-count');
+    if (!list) return;
+
+    const table = state.tables.find(t => t.id === tableId);
+    const capacity = table ? table.capacity : (parseInt(document.getElementById('table-capacity')?.value) || 10);
+    const tableGuests = state.guests.filter(g => g.tableId === tableId);
+
+    if (countEl) {
+        countEl.innerText = `${tableGuests.length} из ${capacity} мест занято`;
+        if (tableGuests.length > capacity) {
+            countEl.className = "text-[10px] text-rose-600 font-bold block";
+            countEl.innerText += " (Превышен лимит мест!)";
+        } else {
+            countEl.className = "text-[10px] text-stone-400 font-semibold block";
+        }
+    }
+
+    list.innerHTML = '';
+    if (tableGuests.length === 0) {
+        list.innerHTML = `
+            <div class="text-center py-3 text-stone-400 text-xs italic bg-stone-50 rounded-xl border border-stone-200/50">
+                За этим столом пока нет гостей. Нажмите «+ Добавить» для быстрого ввода или «Вставить списком»
+            </div>
+        `;
+        return;
+    }
+
+    tableGuests.forEach((guest, idx) => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200/60 text-xs transition';
+        const cat = (state.profile?.trackCategories !== false) ? state.categories.find(c => c.id === guest.categoryId) : null;
+        item.innerHTML = `
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+                <span class="w-5 h-5 rounded-md bg-stone-200 text-stone-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                    ${idx + 1}
+                </span>
+                <span class="font-bold text-stone-900 truncate">${escapeHtml(guest.name)}</span>
+                ${cat ? `<span class="text-[9px] text-stone-500 bg-stone-200/60 px-1.5 py-0.5 rounded truncate max-w-[120px]">${cat.name}</span>` : ''}
+            </div>
+            <button type="button" onclick="removeGuestFromModalTable('${guest.id}', '${tableId}')" class="text-stone-300 hover:text-rose-600 p-1 rounded-lg transition" title="Убрать гостя со стола">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+        `;
+        list.appendChild(item);
+    });
+    lucide.createIcons();
+}
+
+function showTableInlineAddGuest() {
+    const row = document.getElementById('table-inline-add-row');
+    const input = document.getElementById('table-inline-guest-input');
+    if (row && input) {
+        row.classList.remove('hidden');
+        input.value = '';
+        input.focus();
+    }
+}
+
+function hideTableInlineAddGuest() {
+    const row = document.getElementById('table-inline-add-row');
+    const input = document.getElementById('table-inline-guest-input');
+    if (row && input) {
+        input.value = '';
+        row.classList.add('hidden');
+    }
+}
+
+function submitTableInlineGuest() {
+    const input = document.getElementById('table-inline-guest-input');
+    const tableId = document.getElementById('edit-table-id').value;
+    if (!input || !tableId) return;
+
+    const name = input.value.trim();
+    if (!name) {
+        hideTableInlineAddGuest();
+        return;
+    }
+
+    const tableCategory = document.getElementById('table-category').value;
+    const newGuest = {
+        id: 'gst-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+        name: name,
+        phone: '',
+        giftAmount: 0,
+        categoryId: (tableCategory && tableCategory !== 'none') ? tableCategory : 'none',
+        tableId: tableId,
+        seatIndex: -1
+    };
+
+    assignSeatToGuest(newGuest, tableId);
+    state.guests.push(newGuest);
+    saveState();
+
+    renderTableModalGuests(tableId);
+    showToast(`Гость «${name}» добавлен за стол`);
+
+    // Автоматически очищаем поле и держим фокус для непрерывного быстрого ввода
+    input.value = '';
+    input.focus();
+}
+
+function toggleTableBulkPaste() {
+    const container = document.getElementById('table-bulk-paste-container');
+    const textarea = document.getElementById('table-bulk-paste-text');
+    if (container) {
+        const isHidden = container.classList.contains('hidden');
+        if (isHidden) {
+            container.classList.remove('hidden');
+            if (textarea) {
+                textarea.value = '';
+                textarea.focus();
+            }
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+}
+
+function hideTableBulkPaste() {
+    const container = document.getElementById('table-bulk-paste-container');
+    if (container) container.classList.add('hidden');
+}
+
+function applyTableBulkPaste() {
+    const textarea = document.getElementById('table-bulk-paste-text');
+    const tableId = document.getElementById('edit-table-id').value;
+    if (!textarea || !tableId) return;
+
+    const text = textarea.value;
+    if (!text.trim()) {
+        showToast('Пожалуйста, вставьте список имен');
+        return;
+    }
+
+    const lines = text.split(/\r?\n/);
+    const tableCategory = document.getElementById('table-category').value;
+    let addedCount = 0;
+
+    lines.forEach((line, index) => {
+        // Очищаем нумерацию вида "1. ", "2) ", "- " и лишние пробелы
+        let cleanName = line.replace(/^\s*\d+[\.\)\-]\s*/, '').trim();
+        if (cleanName.length > 0) {
+            const newGuest = {
+                id: 'gst-' + Date.now() + '-' + index + '-' + Math.floor(Math.random() * 100),
+                name: cleanName,
+                phone: '',
+                giftAmount: 0,
+                categoryId: (tableCategory && tableCategory !== 'none') ? tableCategory : 'none',
+                tableId: tableId,
+                seatIndex: -1
+            };
+            assignSeatToGuest(newGuest, tableId);
+            state.guests.push(newGuest);
+            addedCount++;
+        }
+    });
+
+    if (addedCount > 0) {
+        saveState();
+        renderTableModalGuests(tableId);
+        hideTableBulkPaste();
+        showToast(`Успешно добавлено ${addedCount} гостей за стол!`);
+    } else {
+        showToast('Не удалось распознать имена гостей');
+    }
+}
+
+function removeGuestFromModalTable(guestId, tableId) {
+    const guest = state.guests.find(g => g.id === guestId);
+    if (!guest) return;
+    guest.tableId = 'none';
+    guest.seatIndex = -1;
+    saveState();
+    renderTableModalGuests(tableId);
+    showToast(`Гость «${guest.name}» снят со стола`);
 }
 
 function handleSaveTable(event) {
@@ -113,15 +347,16 @@ function handleSaveTable(event) {
         return;
     }
 
-    if (id) {
-        state.tables = state.tables.map(t => t.id === id ? { ...t, number, name, capacity, categoryId } : t);
-        showToast('Данные стола обновлены');
+    const existingIndex = state.tables.findIndex(t => t.id === id);
+    if (existingIndex !== -1) {
+        state.tables[existingIndex] = { ...state.tables[existingIndex], number, name, capacity, categoryId };
+        showToast('Данные стола сохранены');
     } else {
-        const newId = 'tbl-' + Date.now();
-        state.tables.push({ id: newId, number, name, capacity, categoryId, x: 260, y: 300 });
+        state.tables.push({ id, number, name, capacity, categoryId, x: 260, y: 300 });
         showToast('Новый стол успешно добавлен');
     }
 
+    isNewTableInModal = false;
     saveState();
     ensureSeatIndices();
     closeModal('modal-table');
