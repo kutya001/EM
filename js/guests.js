@@ -721,35 +721,194 @@ function addSpreadsheetRow() {
 }
 
 // ==========================================
-//    ПЕЧАТЬ СПИСКА ГОСТЕЙ ДЛЯ А4
+//    ПЕЧАТЬ И ПРИГЛАСИТЕЛЬНЫЕ ДЛЯ А4
 // ==========================================
 
+let printCurrentMode = 'seating'; // 'seating' | 'invitation'
 let printTablesPerPage = 4;
+let printInvitationLayout = 2; // 1, 2, or 4 per A4
+let printInvitationRecipient = 'all_personal'; // 'all_personal' | 'general'
+let printCustomInvitationText = '';
 
-function openPrintModal() {
+const invitationTemplates = {
+    wedding: "С огромной радостью и трепетом в сердце приглашаем вас разделить с нами самый счастливый и незабываемый день нашей жизни — день нашего бракосочетания!\n\nВаше присутствие, тёплые слова и улыбки станут для нас самым бесценным подарком. Будем счастливы видеть вас среди наших самых дорогих и близких гостей!",
+    kyz_uzatuu: "Уважаемые и дорогие наши гости!\n\nПриглашаем вас на торжественный вечер проводов невесты (Кыз узатуу). Будем искренне рады разделить с вами этот светлый, радостный и благословенный семейный праздник в кругу самых близких людей!",
+    birthday: "Дорогие друзья, родные и близкие!\n\nПриглашаю вас разделить со мной радость торжества и юбилея! В этот особенный день мне будет невероятно приятно собрать всех близких людей за одним праздничным столом и провести этот незабываемый вечер вместе.",
+    general: "Дорогие друзья, родные и близкие!\n\nС большой радостью приглашаем вас на наше праздничное семейное торжество! Будем счастливы разделить эти неповторимые мгновения радости, счастья и веселья вместе с вами!",
+    short: "Приглашаем вас разделить с нами радость этого праздничного дня! Ждём вас с нетерпением и радостью!"
+};
+
+function getDefaultInvitationTemplateKey() {
+    const et = (state.profile?.eventType || '').toLowerCase();
+    if (et.includes('свадьб')) return 'wedding';
+    if (et.includes('кыз') || et.includes('бешик')) return 'kyz_uzatuu';
+    if (et.includes('рожден') || et.includes('юбилей')) return 'birthday';
+    return 'general';
+}
+
+function openPrintModal(initialMode) {
+    if (initialMode) {
+        printCurrentMode = initialMode;
+    }
+
     const select = document.getElementById('print-tables-per-page');
     if (select) {
         printTablesPerPage = parseInt(select.value) || 4;
     }
+
+    // Заполняем поля сведений о событии для быстрой правки перед печатью
+    const p = state.profile || {};
+    const nameInput = document.getElementById('print-event-name');
+    const dateInput = document.getElementById('print-event-date');
+    const timeInput = document.getElementById('print-event-time');
+    const venueInput = document.getElementById('print-event-venue');
+
+    if (nameInput) nameInput.value = p.eventName || '';
+    if (dateInput) dateInput.value = p.date || '';
+    if (timeInput) {
+        const timeVal = (p.timeStart ? p.timeStart + (p.timeEnd ? ' – ' + p.timeEnd : '') : '');
+        timeInput.value = timeVal || '18:00 (сбор гостей в 17:30)';
+    }
+    if (venueInput) venueInput.value = p.venueName || '';
+
+    // Инициализация текста приглашения
+    if (!printCustomInvitationText) {
+        const tKey = getDefaultInvitationTemplateKey();
+        printCustomInvitationText = invitationTemplates[tKey];
+        const templateSelect = document.getElementById('print-invitation-template-select');
+        if (templateSelect) templateSelect.value = tKey;
+    }
+    const invTextarea = document.getElementById('print-invitation-text');
+    if (invTextarea) {
+        invTextarea.value = printCustomInvitationText;
+    }
+
+    applyPrintModeUI();
     updatePrintPreview();
     openModal('modal-print-guests');
 }
 
+function switchPrintMode(mode) {
+    printCurrentMode = mode;
+    applyPrintModeUI();
+    updatePrintPreview();
+}
+
+function applyPrintModeUI() {
+    const seatingBtn = document.getElementById('print-tab-seating-btn');
+    const invBtn = document.getElementById('print-tab-invitation-btn');
+    const seatingToolbar = document.getElementById('print-seating-toolbar');
+    const invToolbar = document.getElementById('print-invitation-toolbar');
+    const heading = document.getElementById('print-modal-heading');
+
+    if (printCurrentMode === 'seating') {
+        if (seatingBtn) seatingBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-xs";
+        if (invBtn) invBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900";
+        if (seatingToolbar) seatingToolbar.classList.remove('hidden');
+        if (invToolbar) invToolbar.classList.add('hidden');
+        if (heading) heading.innerText = "Печать рассадки гостей (Формат А4)";
+    } else {
+        if (seatingBtn) seatingBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900";
+        if (invBtn) invBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-xs";
+        if (seatingToolbar) seatingToolbar.classList.add('hidden');
+        if (invToolbar) invToolbar.classList.remove('hidden');
+        if (heading) heading.innerText = "Печать праздничных пригласительных (Формат А4)";
+    }
+}
+
+function togglePrintEventDetails() {
+    const drawer = document.getElementById('print-event-details-drawer');
+    const btn = document.getElementById('btn-toggle-print-details');
+    if (drawer) {
+        const isHidden = drawer.classList.contains('hidden');
+        drawer.classList.toggle('hidden');
+        if (btn) {
+            btn.classList.toggle('bg-emerald-100', isHidden);
+            btn.classList.toggle('border-emerald-300', isHidden);
+        }
+    }
+}
+
+function handlePrintEventDetailsChange() {
+    const p = state.profile || {};
+    const nameInput = document.getElementById('print-event-name');
+    const dateInput = document.getElementById('print-event-date');
+    const venueInput = document.getElementById('print-event-venue');
+
+    if (nameInput && nameInput.value.trim()) p.eventName = nameInput.value.trim();
+    if (dateInput && dateInput.value) p.date = dateInput.value;
+    if (venueInput && venueInput.value.trim()) p.venueName = venueInput.value.trim();
+
+    saveState();
+    updatePrintPreview();
+}
+
+function applyInvitationTemplate(templateKey) {
+    if (invitationTemplates[templateKey]) {
+        printCustomInvitationText = invitationTemplates[templateKey];
+        const textarea = document.getElementById('print-invitation-text');
+        if (textarea) textarea.value = printCustomInvitationText;
+        updatePrintPreview();
+    }
+}
+
+function handleInvitationTextChange(event) {
+    printCustomInvitationText = event.target.value;
+    updatePrintPreview();
+}
+
+function getPrintEventInfo() {
+    const p = state.profile || {};
+    const nameInputVal = document.getElementById('print-event-name')?.value?.trim();
+    const dateInputVal = document.getElementById('print-event-date')?.value;
+    const timeInputVal = document.getElementById('print-event-time')?.value?.trim();
+    const venueInputVal = document.getElementById('print-event-venue')?.value?.trim();
+
+    const eventTitle = nameInputVal || p.eventName?.trim() || 'Торжественное мероприятие';
+    const eventType = p.eventType || 'Торжество';
+    const eventDate = dateInputVal ? formatDate(dateInputVal) : (p.date ? formatDate(p.date) : 'Дата не указана');
+    
+    let eventTimeFormatted = timeInputVal;
+    if (!eventTimeFormatted) {
+        eventTimeFormatted = p.timeStart ? `${p.timeStart}${p.timeEnd ? ` – ${p.timeEnd}` : ''}` : '18:00';
+    }
+
+    const eventVenueFormatted = venueInputVal || p.venueName?.trim() || 'Место проведения уточняется';
+
+    return {
+        eventTitle,
+        eventType,
+        eventDate,
+        eventTimeFormatted,
+        eventVenueFormatted
+    };
+}
+
 function updatePrintPreview() {
+    const previewContainer = document.getElementById('print-preview-container');
+    const printOutputArea = document.getElementById('print-output-area');
+    if (!previewContainer) return;
+
+    if (printCurrentMode === 'invitation') {
+        renderInvitationPrintPreview(previewContainer, printOutputArea);
+    } else {
+        renderSeatingPrintPreview(previewContainer, printOutputArea);
+    }
+}
+
+function renderSeatingPrintPreview(previewContainer, printOutputArea) {
     const select = document.getElementById('print-tables-per-page');
     if (select) {
         printTablesPerPage = parseInt(select.value) || 4;
     }
-
-    const previewContainer = document.getElementById('print-preview-container');
-    const printOutputArea = document.getElementById('print-output-area');
-    if (!previewContainer) return;
 
     const optCheckin = document.getElementById('print-opt-checkin')?.checked !== false;
     const optPhone = document.getElementById('print-opt-phone')?.checked !== false && state.profile?.trackPhones !== false;
     const optCategory = document.getElementById('print-opt-category')?.checked !== false && state.profile?.trackCategories !== false;
     const optEmptySeats = document.getElementById('print-opt-empty-seats')?.checked !== false;
     const optUnassigned = document.getElementById('print-opt-unassigned')?.checked !== false;
+
+    const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted } = getPrintEventInfo();
 
     // Сортировка столов по номерам
     const sortedTables = [...state.tables].sort((a, b) => (a.number || 0) - (b.number || 0));
@@ -764,12 +923,6 @@ function updatePrintPreview() {
     const totalPages = Math.max(1, chunks.length + ((optUnassigned && unassignedGuests.length > 0) ? 1 : 0));
 
     let htmlPages = '';
-
-    const p = state.profile || {};
-    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName : 'Мероприятие';
-    const eventType = p.eventType || 'Торжество';
-    const eventDate = p.date ? formatDate(p.date) : 'Дата не указана';
-    const eventVenue = p.venueName || '';
 
     // Генерация страниц со столами
     chunks.forEach((chunk, pageIndex) => {
@@ -791,8 +944,8 @@ function updatePrintPreview() {
                     <tr class="border-b border-stone-200">
                         <td class="py-1 px-1.5 font-bold text-center w-6 text-stone-500">${idx + 1}</td>
                         <td class="py-1 px-1.5 font-bold text-stone-900">${escapeHtml(g.name)}</td>
-                        ${optCategory ? `<td class="py-1 px-1.5 text-stone-500 text-[10px]">${gCat ? gCat.name : ''}</td>` : ''}
-                        ${optPhone ? `<td class="py-1 px-1.5 font-mono text-[10px] text-stone-600">${g.phone || ''}</td>` : ''}
+                        ${optCategory ? `<td class="py-1 px-1.5 text-stone-500 text-[10px]">${gCat ? escapeHtml(gCat.name) : ''}</td>` : ''}
+                        ${optPhone ? `<td class="py-1 px-1.5 font-mono text-[10px] text-stone-600">${escapeHtml(g.phone || '')}</td>` : ''}
                         ${optCheckin ? `<td class="py-1 px-1.5 text-center w-12 border-l border-stone-200"><span class="inline-block w-3.5 h-3.5 border border-stone-400 rounded-xs"></span></td>` : ''}
                     </tr>
                 `;
@@ -824,7 +977,7 @@ function updatePrintPreview() {
                                 ${tableGuests.length} / ${table.capacity} чел
                             </span>
                         </div>
-                        ${cat && optCategory ? `<div class="bg-stone-100 text-stone-600 px-3 py-0.5 text-[9px] font-bold border-b border-stone-200">Категория: ${cat.name}</div>` : ''}
+                        ${cat && optCategory ? `<div class="bg-stone-100 text-stone-600 px-3 py-0.5 text-[9px] font-bold border-b border-stone-200">Категория: ${escapeHtml(cat.name)}</div>` : ''}
                         <table class="w-full text-left text-xs border-collapse">
                             <thead>
                                 <tr class="bg-stone-100 border-b border-stone-300 text-[9px] uppercase tracking-wider text-stone-600 font-bold">
@@ -847,18 +1000,25 @@ function updatePrintPreview() {
         htmlPages += `
             <div class="a4-sheet-preview print-page-sheet flex flex-col justify-between">
                 <div>
-                    <!-- Заголовок страницы А4 -->
-                    <div class="border-b-2 border-stone-900 pb-2 mb-3 flex justify-between items-end">
-                        <div>
-                            <span class="text-[10px] uppercase tracking-widest text-emerald-800 font-bold block">${eventType}</span>
-                            <h2 class="text-lg font-extrabold text-stone-900 leading-tight">${eventTitle}</h2>
-                            <p class="text-[11px] text-stone-600 mt-0.5 font-medium">
-                                📅 ${eventDate} ${eventVenue ? `• 📍 ${eventVenue}` : ''}
-                            </p>
+                    <!-- Заголовок страницы А4 с временем, названием и местом -->
+                    <div class="border-b-2 border-stone-900 pb-2 mb-3.5 flex justify-between items-start">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] uppercase tracking-widest text-emerald-800 font-bold bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded">${escapeHtml(eventType)}</span>
+                                <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">ПЛАН РАССАДКИ ГОСТЕЙ</span>
+                            </div>
+                            <h2 class="text-lg md:text-xl font-extrabold text-stone-900 leading-tight">${escapeHtml(eventTitle)}</h2>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-stone-700 pt-0.5 font-medium">
+                                <span class="flex items-center gap-1">📅 <strong>Дата:</strong> ${escapeHtml(eventDate)}</span>
+                                <span class="flex items-center gap-1">🕒 <strong>Время:</strong> ${escapeHtml(eventTimeFormatted)}</span>
+                                <span class="flex items-center gap-1">📍 <strong>Место проведения:</strong> ${escapeHtml(eventVenueFormatted)}</span>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xs font-bold text-stone-700 block">ПЛАН РАССАДКИ</span>
-                            <span class="text-[10px] text-stone-400">Лист ${pageIndex + 1} из ${totalPages}</span>
+                        <div class="text-right shrink-0">
+                            <div class="bg-stone-900 text-white text-[10px] uppercase font-bold px-2.5 py-1 rounded-md">
+                                Лист ${pageIndex + 1} из ${totalPages}
+                            </div>
+                            <span class="text-[10px] text-stone-400 block mt-1 font-semibold">Столы: ${chunk.map(t => '#' + t.number).join(', ')}</span>
                         </div>
                     </div>
 
@@ -886,8 +1046,8 @@ function updatePrintPreview() {
                 <tr class="border-b border-stone-200">
                     <td class="py-1 px-1.5 font-bold text-center w-8 text-stone-500">${idx + 1}</td>
                     <td class="py-1 px-1.5 font-bold text-stone-900">${escapeHtml(g.name)}</td>
-                    ${optCategory ? `<td class="py-1 px-1.5 text-stone-500 text-[11px]">${gCat ? gCat.name : ''}</td>` : ''}
-                    ${optPhone ? `<td class="py-1 px-1.5 font-mono text-[11px] text-stone-600">${g.phone || ''}</td>` : ''}
+                    ${optCategory ? `<td class="py-1 px-1.5 text-stone-500 text-[11px]">${gCat ? escapeHtml(gCat.name) : ''}</td>` : ''}
+                    ${optPhone ? `<td class="py-1 px-1.5 font-mono text-[11px] text-stone-600">${escapeHtml(g.phone || '')}</td>` : ''}
                     ${optCheckin ? `<td class="py-1 px-1.5 text-center w-16 border-l border-stone-200"><span class="inline-block w-4 h-4 border border-stone-400 rounded-xs"></span></td>` : ''}
                 </tr>
             `;
@@ -896,17 +1056,24 @@ function updatePrintPreview() {
         htmlPages += `
             <div class="a4-sheet-preview print-page-sheet flex flex-col justify-between">
                 <div>
-                    <div class="border-b-2 border-stone-900 pb-2 mb-3 flex justify-between items-end">
-                        <div>
-                            <span class="text-[10px] uppercase tracking-widest text-rose-800 font-bold block">${eventType}</span>
-                            <h2 class="text-lg font-extrabold text-stone-900 leading-tight">${eventTitle}</h2>
-                            <p class="text-[11px] text-stone-600 mt-0.5 font-medium">
-                                📅 ${eventDate} • <strong>ГОСТИ БЕЗ СТОЛА / РЕЗЕРВ</strong>
-                            </p>
+                    <div class="border-b-2 border-stone-900 pb-2 mb-3.5 flex justify-between items-start">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] uppercase tracking-widest text-rose-800 font-bold bg-rose-50 border border-rose-300 px-2 py-0.5 rounded">${escapeHtml(eventType)}</span>
+                                <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">ГОСТИ БЕЗ СТОЛА / РЕЗЕРВ</span>
+                            </div>
+                            <h2 class="text-lg md:text-xl font-extrabold text-stone-900 leading-tight">${escapeHtml(eventTitle)}</h2>
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-stone-700 pt-0.5 font-medium">
+                                <span class="flex items-center gap-1">📅 <strong>Дата:</strong> ${escapeHtml(eventDate)}</span>
+                                <span class="flex items-center gap-1">🕒 <strong>Время:</strong> ${escapeHtml(eventTimeFormatted)}</span>
+                                <span class="flex items-center gap-1">📍 <strong>Место проведения:</strong> ${escapeHtml(eventVenueFormatted)}</span>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xs font-bold text-stone-700 block">РЕЗЕРВ</span>
-                            <span class="text-[10px] text-stone-400">Лист ${totalPages} из ${totalPages}</span>
+                        <div class="text-right shrink-0">
+                            <div class="bg-stone-900 text-white text-[10px] uppercase font-bold px-2.5 py-1 rounded-md">
+                                Лист ${totalPages} из ${totalPages}
+                            </div>
+                            <span class="text-[10px] text-stone-400 block mt-1 font-semibold">Резерв</span>
                         </div>
                     </div>
 
@@ -952,7 +1119,212 @@ function updatePrintPreview() {
     lucide.createIcons();
 }
 
+function renderInvitationPrintPreview(previewContainer, printOutputArea) {
+    const layoutSelect = document.getElementById('print-invitation-layout');
+    if (layoutSelect) {
+        printInvitationLayout = parseInt(layoutSelect.value) || 2;
+    }
+    const recipSelect = document.getElementById('print-invitation-recipient');
+    if (recipSelect) {
+        printInvitationRecipient = recipSelect.value || 'all_personal';
+    }
+
+    const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted } = getPrintEventInfo();
+    const invText = document.getElementById('print-invitation-text')?.value?.trim() || printCustomInvitationText || invitationTemplates.wedding;
+
+    // Список получателей для генерации
+    let guestCardsData = [];
+    if (printInvitationRecipient === 'all_personal') {
+        if (state.guests && state.guests.length > 0) {
+            guestCardsData = state.guests.map(g => {
+                const table = state.tables.find(t => t.id === g.tableId);
+                const tableInfo = table ? `${getTableName(table)}${table.name ? ` («${table.name}»)` : ''}` : 'Персональное место за праздничным столом';
+                return {
+                    name: g.name,
+                    tableInfo: tableInfo,
+                    isPersonal: true
+                };
+            });
+        } else {
+            guestCardsData = [{
+                name: 'Уважаемый(ая) Гость',
+                tableInfo: 'Стол № 1 («Почетные гости»)',
+                isPersonal: true
+            }];
+        }
+    } else {
+        // Общий бланк (генерируем ровно одну страницу с 1, 2 или 4 карточками)
+        for (let i = 0; i < printInvitationLayout; i++) {
+            guestCardsData.push({
+                name: null,
+                tableInfo: 'Праздничный стол торжества',
+                isPersonal: false
+            });
+        }
+    }
+
+    // Разбиваем на листы А4 по layout (1, 2 или 4 на лист)
+    const cardsPerPage = printInvitationLayout;
+    const pages = [];
+    for (let i = 0; i < guestCardsData.length; i += cardsPerPage) {
+        pages.push(guestCardsData.slice(i, i + cardsPerPage));
+    }
+
+    let htmlPages = '';
+
+    pages.forEach((pageCards, pageIdx) => {
+        let cardsHtml = '';
+
+        if (cardsPerPage === 1) {
+            // 1 роскошное большое приглашение на лист А4
+            const card = pageCards[0];
+            cardsHtml = `
+                <div class="h-full flex flex-col justify-center">
+                    ${buildSingleInvitationCardHtml(card, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'large')}
+                </div>
+            `;
+        } else if (cardsPerPage === 2) {
+            // 2 пригласительных на лист А4 с пунктирной линией отреза
+            cardsHtml = `
+                <div class="flex flex-col gap-4 h-full justify-between">
+                    <div class="flex-1">
+                        ${buildSingleInvitationCardHtml(pageCards[0], eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'medium')}
+                    </div>
+                    <div class="invitation-cut-line-h py-1 text-center select-none">
+                        <span class="bg-white px-3 text-[10px] text-stone-400 font-mono tracking-widest inline-flex items-center gap-1.5">
+                            ✂️ ЛИНИЯ РАЗРЕЗА А5 ✂️
+                        </span>
+                    </div>
+                    <div class="flex-1">
+                        ${pageCards[1] ? buildSingleInvitationCardHtml(pageCards[1], eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'medium') : ''}
+                    </div>
+                </div>
+            `;
+        } else if (cardsPerPage === 4) {
+            // 4 карточки на лист А4 (Сетка 2x2) с линиями отреза
+            const c1 = pageCards[0];
+            const c2 = pageCards[1];
+            const c3 = pageCards[2];
+            const c4 = pageCards[3];
+
+            cardsHtml = `
+                <div class="grid grid-cols-2 gap-3.5 h-full relative">
+                    <div class="p-1">${c1 ? buildSingleInvitationCardHtml(c1, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
+                    <div class="p-1">${c2 ? buildSingleInvitationCardHtml(c2, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
+                    <div class="col-span-2 invitation-cut-line-h text-center -my-1 select-none">
+                        <span class="bg-white px-2 text-[9px] text-stone-400 font-mono">✂️ РАЗРЕЗ А6 ✂️</span>
+                    </div>
+                    <div class="p-1">${c3 ? buildSingleInvitationCardHtml(c3, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
+                    <div class="p-1">${c4 ? buildSingleInvitationCardHtml(c4, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
+                </div>
+            `;
+        }
+
+        htmlPages += `
+            <div class="a4-sheet-preview print-page-sheet flex flex-col justify-between" style="min-height: 290mm;">
+                <div class="flex-1">
+                    ${cardsHtml}
+                </div>
+                <div class="border-t border-stone-200 pt-1.5 mt-2 flex justify-between items-center text-[9px] text-stone-400 select-none">
+                    <span>EM Pro v3 • Праздничные пригласительные</span>
+                    <span>Лист ${pageIdx + 1} из ${pages.length}</span>
+                </div>
+            </div>
+        `;
+    });
+
+    previewContainer.innerHTML = htmlPages;
+    if (printOutputArea) {
+        printOutputArea.innerHTML = htmlPages;
+    }
+    lucide.createIcons();
+}
+
+function buildSingleInvitationCardHtml(cardData, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, size) {
+    if (!cardData) return '';
+
+    const isSmall = size === 'small';
+    const isLarge = size === 'large';
+
+    const greetingHtml = cardData.isPersonal && cardData.name ? `
+        <div class="serif-title font-bold text-amber-950 ${isSmall ? 'text-xs' : (isLarge ? 'text-xl' : 'text-sm')}">
+            Дорогой(ая) <span class="underline decoration-amber-500 underline-offset-4">${escapeHtml(cardData.name)}</span>!
+        </div>
+    ` : `
+        <div class="serif-title font-bold text-amber-950 ${isSmall ? 'text-xs' : (isLarge ? 'text-xl' : 'text-sm')}">
+            Дорогие друзья, родные и близкие!
+        </div>
+        <div class="text-[10px] text-stone-400 mt-1 font-mono">
+            Уважаемый(ая) __________________________________________________
+        </div>
+    `;
+
+    return `
+        <div class="invitation-border-luxury rounded-2xl shadow-sm h-full flex flex-col justify-between text-center relative overflow-hidden bg-[#fffdfa] ${isSmall ? 'p-2.5' : (isLarge ? 'p-6' : 'p-4')}">
+            <!-- Угловые золоченые орнаменты -->
+            <div class="invitation-corner invitation-corner-tl"></div>
+            <div class="invitation-corner invitation-corner-tr"></div>
+            <div class="invitation-corner invitation-corner-bl"></div>
+            <div class="invitation-corner invitation-corner-br"></div>
+
+            <div class="invitation-border-inner rounded-xl space-y-2 flex-1 flex flex-col justify-between ${isSmall ? 'p-2' : (isLarge ? 'p-5' : 'p-3')}">
+                <!-- Шапка приглашения -->
+                <div>
+                    <span class="text-[9px] uppercase tracking-[0.25em] text-amber-800 font-bold block mb-0.5">П Р И Г Л А Ш Е Н И Е</span>
+                    <h3 class="serif-title font-bold text-amber-950 leading-tight ${isSmall ? 'text-sm' : (isLarge ? 'text-2xl' : 'text-lg')}">
+                        ${escapeHtml(eventTitle)}
+                    </h3>
+                    <div class="w-16 h-0.5 bg-amber-600/50 mx-auto mt-1 mb-1.5"></div>
+                </div>
+
+                <!-- Обращение к гостю -->
+                <div class="py-0.5">
+                    ${greetingHtml}
+                </div>
+
+                <!-- Текст приглашения (с сохранением переносов) -->
+                <p class="text-stone-700 leading-relaxed italic px-2 whitespace-pre-line font-serif ${isSmall ? 'text-[10px] line-clamp-4' : (isLarge ? 'text-sm' : 'text-xs')}">
+                    ${escapeHtml(invText)}
+                </p>
+
+                <!-- Сведения о мероприятии (Дата, Время, Место, Стол) -->
+                <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-2 my-1 text-stone-800 space-y-1 text-left font-medium ${isSmall ? 'text-[9px]' : (isLarge ? 'text-xs p-3.5 space-y-1.5' : 'text-[11px]')}">
+                    <div class="flex items-center gap-2">
+                        <span class="text-amber-800 font-bold w-4 text-center shrink-0">📅</span>
+                        <span class="font-bold text-stone-900">Дата торжества:</span>
+                        <span class="text-stone-700">${escapeHtml(eventDate)}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-amber-800 font-bold w-4 text-center shrink-0">🕒</span>
+                        <span class="font-bold text-stone-900">Время сбора:</span>
+                        <span class="text-stone-700">${escapeHtml(eventTimeFormatted)}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-amber-800 font-bold w-4 text-center shrink-0">📍</span>
+                        <span class="font-bold text-stone-900">Место проведения:</span>
+                        <span class="text-stone-700">${escapeHtml(eventVenueFormatted)}</span>
+                    </div>
+                    ${cardData.tableInfo ? `
+                    <div class="flex items-center gap-2 pt-0.5 border-t border-amber-200/70 text-emerald-900 font-semibold">
+                        <span class="text-emerald-800 font-bold w-4 text-center shrink-0">🪑</span>
+                        <span>Ваш стол:</span>
+                        <span class="text-emerald-800 font-bold">${escapeHtml(cardData.tableInfo)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <!-- Подпись внизу -->
+                <div class="pt-1 text-center text-stone-600">
+                    <p class="italic serif-title ${isSmall ? 'text-[9px]' : (isLarge ? 'text-xs' : 'text-[10px]')}">Ждём вас с нетерпением и радостью!</p>
+                    <span class="text-[8px] uppercase tracking-wider text-amber-800 font-semibold block mt-0.5">С любовью и уважением</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function triggerPrint() {
     updatePrintPreview();
     window.print();
 }
+

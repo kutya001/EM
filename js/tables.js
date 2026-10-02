@@ -108,6 +108,7 @@ function openTableModal(tableId = null) {
         });
     }
 
+    editingGuestIdInTableModal = null;
     renderTableModalGuests(idInput.value);
     hideTableInlineAddGuest();
     hideTableBulkPaste();
@@ -146,8 +147,11 @@ function handleCloseTableModal() {
         }
     }
     isNewTableInModal = false;
+    editingGuestIdInTableModal = null;
     closeModal('modal-table');
 }
+
+let editingGuestIdInTableModal = null;
 
 function renderTableModalGuests(tableId) {
     const list = document.getElementById('table-modal-guests-list');
@@ -180,23 +184,128 @@ function renderTableModalGuests(tableId) {
 
     tableGuests.forEach((guest, idx) => {
         const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-2 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200/60 text-xs transition';
         const cat = (state.profile?.trackCategories !== false) ? state.categories.find(c => c.id === guest.categoryId) : null;
-        item.innerHTML = `
-            <div class="flex items-center gap-2 min-w-0 flex-1">
-                <span class="w-5 h-5 rounded-md bg-stone-200 text-stone-700 text-[10px] font-bold flex items-center justify-center shrink-0">
-                    ${idx + 1}
-                </span>
-                <span class="font-bold text-stone-900 truncate">${escapeHtml(guest.name)}</span>
-                ${cat ? `<span class="text-[9px] text-stone-500 bg-stone-200/60 px-1.5 py-0.5 rounded truncate max-w-[120px]">${cat.name}</span>` : ''}
-            </div>
-            <button type="button" onclick="removeGuestFromModalTable('${guest.id}', '${tableId}')" class="text-stone-300 hover:text-rose-600 p-1 rounded-lg transition" title="Убрать гостя со стола">
-                <i data-lucide="x" class="w-3.5 h-3.5"></i>
-            </button>
-        `;
+
+        if (editingGuestIdInTableModal === guest.id) {
+            item.className = 'p-2.5 bg-amber-50/90 rounded-xl border border-amber-300 text-xs space-y-2 animate-fadeIn';
+            const catOptions = state.categories.map(c => 
+                `<option value="${c.id}" ${c.id === guest.categoryId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+            ).join('');
+            
+            item.innerHTML = `
+                <div class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 rounded-md bg-amber-200 text-amber-900 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        ${idx + 1}
+                    </span>
+                    <input type="text" id="modal-guest-edit-name-${guest.id}" value="${escapeHtml(guest.name)}" placeholder="Имя гостя"
+                           class="flex-1 bg-white border border-amber-400 rounded-lg px-2.5 py-1 text-xs font-bold text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    <button type="button" onclick="saveGuestInModalTable('${guest.id}', '${tableId}')" class="bg-emerald-800 hover:bg-emerald-700 text-white p-1.5 rounded-lg transition shrink-0" title="Сохранить изменения">
+                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="cancelEditGuestInModalTable('${tableId}')" class="text-stone-400 hover:text-stone-600 p-1.5 rounded-lg transition shrink-0" title="Отмена">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                ${(state.profile?.trackPhones !== false || state.profile?.trackCategories !== false) ? `
+                <div class="flex items-center gap-2 pl-6">
+                    ${state.profile?.trackPhones !== false ? `
+                        <input type="tel" id="modal-guest-edit-phone-${guest.id}" value="${escapeHtml(guest.phone || '')}" placeholder="Телефон (+996...)"
+                               class="w-1/2 bg-white border border-stone-250 rounded-lg px-2 py-1 text-[11px] text-stone-800 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    ` : ''}
+                    ${state.profile?.trackCategories !== false ? `
+                        <select id="modal-guest-edit-cat-${guest.id}" class="w-1/2 bg-white border border-stone-250 rounded-lg px-2 py-1 text-[11px] text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                            <option value="none">Без категории</option>
+                            ${catOptions}
+                        </select>
+                    ` : ''}
+                </div>
+                ` : ''}
+            `;
+            setTimeout(() => {
+                const inp = document.getElementById(`modal-guest-edit-name-${guest.id}`);
+                if (inp) {
+                    inp.focus();
+                    inp.select();
+                    inp.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            saveGuestInModalTable(guest.id, tableId);
+                        } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelEditGuestInModalTable(tableId);
+                        }
+                    });
+                }
+            }, 30);
+        } else {
+            item.className = 'flex items-center justify-between p-2 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200/60 text-xs transition';
+            const hasPhone = state.profile?.trackPhones !== false && guest.phone;
+            item.innerHTML = `
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <span class="w-5 h-5 rounded-md bg-stone-200 text-stone-700 text-[10px] font-bold flex items-center justify-center shrink-0">
+                        ${idx + 1}
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="font-bold text-stone-900 text-xs truncate">${escapeHtml(guest.name)}</span>
+                            ${cat ? `<span class="text-[9px] text-stone-500 bg-stone-200/70 px-1.5 py-0.2 rounded truncate max-w-[110px] font-medium">${escapeHtml(cat.name)}</span>` : ''}
+                        </div>
+                        ${hasPhone ? `<span class="text-[10px] text-stone-400 font-mono block leading-none mt-0.5">${escapeHtml(guest.phone)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" onclick="startEditGuestInModalTable('${guest.id}', '${tableId}')" class="text-stone-400 hover:text-amber-600 hover:bg-amber-100/60 p-1.5 rounded-lg transition" title="Редактировать гостя">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="removeGuestFromModalTable('${guest.id}', '${tableId}')" class="text-stone-300 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg transition" title="Убрать гостя со стола">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            `;
+        }
         list.appendChild(item);
     });
     lucide.createIcons();
+}
+
+function startEditGuestInModalTable(guestId, tableId) {
+    editingGuestIdInTableModal = guestId;
+    renderTableModalGuests(tableId);
+}
+
+function cancelEditGuestInModalTable(tableId) {
+    editingGuestIdInTableModal = null;
+    renderTableModalGuests(tableId);
+}
+
+function saveGuestInModalTable(guestId, tableId) {
+    const nameInp = document.getElementById(`modal-guest-edit-name-${guestId}`);
+    if (!nameInp) return;
+    const newName = nameInp.value.trim();
+    if (!newName) {
+        showToast('Имя гостя не может быть пустым');
+        nameInp.focus();
+        return;
+    }
+    const guest = state.guests.find(g => g.id === guestId);
+    if (!guest) return;
+
+    guest.name = newName;
+
+    const phoneInp = document.getElementById(`modal-guest-edit-phone-${guestId}`);
+    if (phoneInp) {
+        guest.phone = phoneInp.value.trim();
+    }
+
+    const catSelect = document.getElementById(`modal-guest-edit-cat-${guestId}`);
+    if (catSelect) {
+        guest.categoryId = catSelect.value;
+    }
+
+    saveState();
+    editingGuestIdInTableModal = null;
+    renderTableModalGuests(tableId);
+    showToast(`Гость «${newName}» обновлен`);
 }
 
 function showTableInlineAddGuest() {

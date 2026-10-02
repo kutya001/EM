@@ -444,9 +444,14 @@
                     </div>
                     
                     <!-- Кнопка Фильтров с индикатором -->
-                    <button id="guests-filters-toggle-btn" onclick="toggleGuestsFiltersDrawer()" class="relative bg-stone-50 hover:bg-stone-200/60 p-1.5 rounded-lg border border-stone-200/40 active:scale-95 transition shrink-0 flex items-center justify-center h-7 w-7 ml-1 shadow-2xs">
+                    <button id="guests-filters-toggle-btn" onclick="toggleGuestsFiltersDrawer()" class="relative bg-stone-50 hover:bg-stone-200/60 p-1.5 rounded-lg border border-stone-200/40 active:scale-95 transition shrink-0 flex items-center justify-center h-7 w-7 ml-1 shadow-2xs" title="Фильтры и поиск">
                         <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-stone-600"></i>
                         <span id="guests-filters-active-dot" class="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full hidden animate-pulse"></span>
+                    </button>
+
+                    <!-- Кнопка Печати / Пригласительных -->
+                    <button onclick="openPrintModal('seating')" class="bg-stone-50 hover:bg-stone-200/60 p-1.5 rounded-lg border border-stone-200/40 active:scale-95 transition shrink-0 flex items-center justify-center h-7 w-7 shadow-2xs text-emerald-800" title="Печать списков рассадки и пригласительных (А4)">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
             </div>
@@ -1936,29 +1941,83 @@
     </div>
 
     <!-- ========================================== -->
-    <!--     МОДАЛКА: ПЕЧАТЬ СПИСКА ГОСТЕЙ (А4)     -->
+    <!--     МОДАЛКА: ПЕЧАТЬ И ПРИГЛАСИТЕЛЬНЫЕ (А4) -->
     <!-- ========================================== -->
     <div id="modal-print-guests" class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 md:p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[94vh]">
             
             <!-- Шапка окна печати -->
-            <div class="bg-emerald-950 text-white p-4 flex justify-between items-center shrink-0">
+            <div class="bg-emerald-950 text-white p-3.5 md:p-4 flex justify-between items-center shrink-0">
                 <div class="flex items-center gap-2.5">
                     <div class="bg-emerald-900/80 p-2 rounded-xl text-amber-400 border border-emerald-800/60">
                         <i data-lucide="printer" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold serif-title text-base">Печать рассадки гостей (Формат А4)</h3>
-                        <span class="text-[10px] text-emerald-300 font-semibold block">Размещение столов на листах А4 для печати или сохранения в PDF</span>
+                        <h3 class="font-bold serif-title text-base" id="print-modal-heading">Печать рассадки и пригласительных (А4)</h3>
+                        <span class="text-[10px] text-emerald-300 font-semibold block">Размещение столов на листах А4, время, локация и праздничные пригласительные</span>
                     </div>
                 </div>
-                <button type="button" onclick="closeModal('modal-print-guests')" class="text-stone-300 hover:text-white p-1 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="triggerPrint()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 text-xs font-bold py-2 px-3.5 rounded-xl shadow-sm flex items-center gap-1.5 transition">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Распечатать / PDF</span>
+                    </button>
+                    <button type="button" onclick="closeModal('modal-print-guests')" class="text-stone-300 hover:text-white p-1 rounded-lg">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
 
-            <!-- Панель настроек печати -->
-            <div class="bg-stone-50 border-b border-stone-200 p-3.5 shrink-0 flex flex-wrap items-center justify-between gap-3">
+            <!-- Переключатель режима: Рассадка vs Пригласительные -->
+            <div class="bg-stone-100 border-b border-stone-200 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div class="inline-flex p-1 bg-stone-200/80 rounded-xl gap-1">
+                    <button type="button" id="print-tab-seating-btn" onclick="switchPrintMode('seating')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-xs">
+                        <i data-lucide="armchair" class="w-3.5 h-3.5"></i>
+                        <span>План рассадки столов</span>
+                    </button>
+                    <button type="button" id="print-tab-invitation-btn" onclick="switchPrintMode('invitation')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900">
+                        <i data-lucide="mail-open" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <span>Пригласительные билеты</span>
+                    </button>
+                </div>
+
+                <!-- Быстрое уточнение сведений для печати (Название, Время, Место) -->
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="togglePrintEventDetails()" id="btn-toggle-print-details" class="text-[11px] font-bold text-stone-600 hover:text-emerald-800 bg-white border border-stone-250 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-emerald-700"></i>
+                        <span>Сведения о событии для печати</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Выдвижной блок сведений события (Название, Время, Место) -->
+            <div id="print-event-details-drawer" class="hidden bg-emerald-50/60 border-b border-emerald-200/80 p-3 shrink-0 animate-fadeIn">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    <div>
+                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Название мероприятия</label>
+                        <input type="text" id="print-event-name" oninput="handlePrintEventDetailsChange()" placeholder="Например: Свадьба Азамата и Асели"
+                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Дата</label>
+                        <input type="date" id="print-event-date" onchange="handlePrintEventDetailsChange()"
+                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Время сбора / проведения</label>
+                        <input type="text" id="print-event-time" oninput="handlePrintEventDetailsChange()" placeholder="Например: 18:00 (сбор гостей в 17:30)"
+                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Место проведения</label>
+                        <input type="text" id="print-event-venue" oninput="handlePrintEventDetailsChange()" placeholder="Например: Банкетный зал «Ала-Тоо»"
+                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ПАНЕЛЬ 1: Настройки печати рассадки столов -->
+            <div id="print-seating-toolbar" class="bg-stone-50 border-b border-stone-200 p-3 shrink-0 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap items-center gap-3">
                     <!-- Выбор количества столов на 1 лист А4 -->
                     <div>
@@ -1972,10 +2031,10 @@
                     </div>
 
                     <!-- Опции колонок -->
-                    <div class="flex flex-wrap items-center gap-3 pt-3 select-none">
+                    <div class="flex flex-wrap items-center gap-3 pt-2.5 select-none">
                         <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-stone-700">
                             <input type="checkbox" id="print-opt-checkin" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
-                            <span>Колонка для отметок</span>
+                            <span>Колонка отметок</span>
                         </label>
                         <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-stone-700">
                             <input type="checkbox" id="print-opt-empty-seats" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
@@ -1995,12 +2054,57 @@
                         </label>
                     </div>
                 </div>
+            </div>
 
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="triggerPrint()" class="bg-emerald-800 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center gap-2 transition">
-                        <i data-lucide="printer" class="w-4 h-4"></i>
-                        <span>Распечатать / PDF</span>
-                    </button>
+            <!-- ПАНЕЛЬ 2: Настройки печати пригласительных (Текст, Шаблоны, Раскладка) -->
+            <div id="print-invitation-toolbar" class="hidden bg-stone-50 border-b border-stone-200 p-3.5 shrink-0 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Количество карточек на 1 лист А4 -->
+                        <div>
+                            <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Формат на листе А4:</label>
+                            <select id="print-invitation-layout" onchange="updatePrintPreview()" class="bg-white border border-stone-250 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs">
+                                <option value="2" selected>2 пригласительных на лист А4 (Формат А5 с линией отреза)</option>
+                                <option value="1">1 роскошное приглашение на весь лист А4</option>
+                                <option value="4">4 карточки на лист А4 (Формат А6 с линиями отреза)</option>
+                            </select>
+                        </div>
+
+                        <!-- Персональные или общий бланк -->
+                        <div>
+                            <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Получатели:</label>
+                            <select id="print-invitation-recipient" onchange="updatePrintPreview()" class="bg-white border border-stone-250 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs">
+                                <option value="all_personal" selected>Персональные (Имя гостя + номер его стола)</option>
+                                <option value="general">Общий бланк (со строкой для имени «Уважаемый(ая)...»)</option>
+                            </select>
+                        </div>
+
+                        <!-- Готовые шаблоны текста -->
+                        <div>
+                            <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Шаблон текста:</label>
+                            <select id="print-invitation-template-select" onchange="applyInvitationTemplate(this.value)" class="bg-white border border-stone-250 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs">
+                                <option value="wedding">Свадебное торжество</option>
+                                <option value="kyz_uzatuu">Кыз узатуу / Бешик той</option>
+                                <option value="birthday">Юбилей / День рождения</option>
+                                <option value="general">Семейное торжество / Праздник</option>
+                                <option value="short">Краткое приглашение</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Редактируемый текст приглашения -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-[10px] font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1">
+                            <i data-lucide="edit" class="w-3 h-3 text-amber-600"></i>
+                            <span>Текст пригласительного (редактируйте прямо здесь):</span>
+                        </label>
+                        <span class="text-[10px] text-stone-400">Изменения сразу видны на открытках ниже</span>
+                    </div>
+                    <textarea id="print-invitation-text" rows="2" oninput="handleInvitationTextChange(event)"
+                              class="w-full bg-white border border-stone-250 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs"
+                              placeholder="Введите теплый текст приглашения..."></textarea>
                 </div>
             </div>
 
@@ -2011,7 +2115,7 @@
 
             <!-- Подвал окна -->
             <div class="p-3 bg-stone-50 border-t border-stone-200 flex justify-between items-center text-xs text-stone-500">
-                <span>Подсказка: В окне печати браузера выберите <strong>Сохранить как PDF</strong> или ваш принтер (формат А4).</span>
+                <span class="text-[11px]">💡 В окне печати браузера выберите <strong>Сохранить как PDF</strong> или ваш принтер (формат листа А4, масштаб 100%).</span>
                 <button type="button" onclick="closeModal('modal-print-guests')" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold px-4 py-2 rounded-xl transition">
                     Закрыть
                 </button>
@@ -2021,6 +2125,7 @@
 
     <!-- Контейнер для вывода на чистую печать (скрыт на экране, отображается только в @media print) -->
     <div id="print-output-area"></div>
+
 
 
     <!-- ========================================== -->
