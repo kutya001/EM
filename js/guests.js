@@ -2,6 +2,9 @@
 
 // --- Переключатель подвкладок списка гостей ---
 function switchGuestsViewMode(mode) {
+    if (state.profile?.trackCategories === false && mode === 'categories') {
+        mode = 'list';
+    }
     guestsViewMode = mode;
     saveState();
     
@@ -10,14 +13,14 @@ function switchGuestsViewMode(mode) {
         const btn = document.getElementById(`subtab-btn-${m}`);
         if (btn) {
             if (m === mode) {
-                btn.className = "flex-1 justify-center text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-xs";
+                btn.className = "guest-subtab-island flex-1 justify-center text-center py-2 px-1 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 bg-gradient-to-b from-emerald-800 to-emerald-950 text-white shadow-md border-b-2 border-emerald-950 active:scale-95";
             } else {
-                btn.className = "flex-1 justify-center text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50";
+                btn.className = "guest-subtab-island flex-1 justify-center text-center py-2 px-1 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 text-stone-600 bg-white/90 hover:text-stone-900 hover:bg-stone-50 shadow-xs border border-stone-200/80 border-b-2 border-b-stone-300 active:scale-95";
             }
         }
     });
 
-    // Если категории отключены, можно скрывать субвкладку категорий
+    // Если категории отключены, скрываем субвкладку категорий
     const catBtn = document.getElementById('subtab-btn-categories');
     if (catBtn) {
         if (state.profile?.trackCategories === false) {
@@ -27,7 +30,11 @@ function switchGuestsViewMode(mode) {
         }
     }
     
+    if (typeof updateAppHeaderTitle === 'function') {
+        updateAppHeaderTitle();
+    }
     renderGuests();
+    lucide.createIcons();
 }
 
 function toggleGroupCollapse(groupKey) {
@@ -54,13 +61,16 @@ function createGuestCard(guest) {
     }`;
 
     const phoneHTML = (showPhone && guest.phone) ? `
-        <div class="flex items-center gap-1.5 mt-1.5 select-all">
+        <div class="flex items-center gap-1.5 mt-1.5 flex-wrap select-all">
             <a href="tel:${guest.phone}" class="bg-stone-100 hover:bg-stone-200 text-stone-700 px-2 py-0.5 rounded-md text-[9px] font-bold inline-flex items-center gap-1 transition" title="Позвонить">
                 <i data-lucide="phone" class="w-2.5 h-2.5 text-emerald-800"></i> ${guest.phone}
             </a>
-            <a href="https://wa.me/${guest.phone.replace(/[^0-9]/g, '')}" target="_blank" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-950 px-2 py-0.5 rounded-md text-[9px] font-bold inline-flex items-center gap-1 transition" title="Написать в WhatsApp">
-                <i data-lucide="message-square" class="w-2.5 h-2.5 text-emerald-600"></i> WhatsApp
-            </a>
+            <button type="button" onclick="sendWhatsAppPersonalInvitation('${guest.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-950 px-2 py-0.5 rounded-md text-[9px] font-bold inline-flex items-center gap-1 transition" title="Отправить персональное приглашение в WhatsApp">
+                <i data-lucide="message-square" class="w-2.5 h-2.5 text-emerald-600"></i> Пригласить в WA
+            </button>
+            <button type="button" onclick="sendWhatsAppPersonalInvitationPDF('${guest.id}')" class="bg-amber-50 hover:bg-amber-100 text-amber-950 px-2 py-0.5 rounded-md text-[9px] font-bold inline-flex items-center gap-1 transition" title="Отправить персональный PDF-билет в WhatsApp">
+                <i data-lucide="file-text" class="w-2.5 h-2.5 text-amber-700"></i> WA (PDF)
+            </button>
         </div>
     ` : '';
 
@@ -88,10 +98,13 @@ function createGuestCard(guest) {
         </div>
 
         <div class="flex items-center gap-1 ml-2 shrink-0">
-            <button onclick="openGuestModal('${guest.id}')" class="text-stone-300 hover:text-emerald-800 p-2 rounded-lg active:scale-90 transition">
+            <button onclick="openPrintModal('invitation_personal', '${guest.id}')" class="text-stone-300 hover:text-amber-600 p-2 rounded-lg active:scale-90 transition" title="Открыть пригласительный билет гостя (А4)">
+                <i data-lucide="mail" class="w-4 h-4"></i>
+            </button>
+            <button onclick="openGuestModal('${guest.id}')" class="text-stone-300 hover:text-emerald-800 p-2 rounded-lg active:scale-90 transition" title="Редактировать гостя">
                 <i data-lucide="edit-3" class="w-4 h-4"></i>
             </button>
-            <button onclick="deleteGuest('${guest.id}')" class="text-stone-300 hover:text-red-600 p-2 rounded-lg active:scale-90 transition">
+            <button onclick="deleteGuest('${guest.id}')" class="text-stone-300 hover:text-red-600 p-2 rounded-lg active:scale-90 transition" title="Удалить">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
         </div>
@@ -105,6 +118,33 @@ function renderGuests() {
     const empty = document.getElementById('guests-empty-state');
     const spreadsheetContainer = document.getElementById('guests-spreadsheet-container');
     list.innerHTML = '';
+
+    const showCat = state.profile?.trackCategories !== false;
+
+    // Скрываем или показываем категорию в фильтрах в зависимости от настроек
+    const filterCatEl = document.getElementById('filter-category');
+    if (filterCatEl && filterCatEl.parentElement) {
+        if (!showCat) {
+            filterCatEl.classList.add('hidden');
+            filterCatEl.parentElement.classList.remove('grid-cols-2');
+            filterCatEl.parentElement.classList.add('grid-cols-1');
+        } else {
+            filterCatEl.classList.remove('hidden');
+            filterCatEl.parentElement.classList.add('grid-cols-2');
+            filterCatEl.parentElement.classList.remove('grid-cols-1');
+        }
+    }
+
+    // Если категории выключены, а режим 'categories', переключаем на 'list'
+    if (!showCat && guestsViewMode === 'categories') {
+        guestsViewMode = 'list';
+    }
+
+    const catSubtabBtn = document.getElementById('subtab-btn-categories');
+    if (catSubtabBtn) {
+        if (!showCat) catSubtabBtn.classList.add('hidden');
+        else catSubtabBtn.classList.remove('hidden');
+    }
 
     const filtered = getFilteredGuests();
     document.getElementById('total-guests-count').innerText = filtered.length;
@@ -251,6 +291,15 @@ function toggleSelectAllVisible() {
 function updateBulkActionBar() {
     const bar = document.getElementById('bulk-action-bar');
     const badge = document.getElementById('selected-guests-badge');
+    const massCatBtn = document.getElementById('bulk-btn-mass-category');
+
+    if (massCatBtn) {
+        if (state.profile?.trackCategories === false) {
+            massCatBtn.classList.add('hidden');
+        } else {
+            massCatBtn.classList.remove('hidden');
+        }
+    }
     
     if (selectedGuests.size > 0) {
         badge.innerText = selectedGuests.size;
@@ -272,6 +321,20 @@ function openGuestModal(guestId = null) {
     const tblSelect = document.getElementById('guest-table');
 
     updateDropdowns();
+
+    // Синхронизация полей формы с настройками мероприятия
+    const showPhone = state.profile?.trackPhones !== false;
+    const showCat = state.profile?.trackCategories !== false;
+    const phoneContainer = document.getElementById('guest-phone-container');
+    const catContainer = document.getElementById('guest-category-container');
+    if (phoneContainer) {
+        if (!showPhone) phoneContainer.classList.add('hidden');
+        else phoneContainer.classList.remove('hidden');
+    }
+    if (catContainer) {
+        if (!showCat) catContainer.classList.add('hidden');
+        else catContainer.classList.remove('hidden');
+    }
 
     if (guestId) {
         const guest = state.guests.find(g => g.id === guestId);
@@ -724,32 +787,33 @@ function addSpreadsheetRow() {
 //    ПЕЧАТЬ И ПРИГЛАСИТЕЛЬНЫЕ ДЛЯ А4
 // ==========================================
 
-let printCurrentMode = 'seating'; // 'seating' | 'invitation'
+let printCurrentMode = 'seating'; // 'seating' | 'schema' | 'invitation_general' | 'invitation_personal'
 let printTablesPerPage = 4;
-let printInvitationLayout = 2; // 1, 2, or 4 per A4
-let printInvitationRecipient = 'all_personal'; // 'all_personal' | 'general'
-let printCustomInvitationText = '';
+let printInvGenLayout = 2; // 1, 2, or 4 per A4
+let printInvPersLayout = 2; // 1, 2, or 4 per A4
+let printCustomGeneralText = '';
+let printCustomPersonalText = '';
+let printIsZoomFit = true;
 
-const invitationTemplates = {
-    wedding: "С огромной радостью и трепетом в сердце приглашаем вас разделить с нами самый счастливый и незабываемый день нашей жизни — день нашего бракосочетания!\n\nВаше присутствие, тёплые слова и улыбки станут для нас самым бесценным подарком. Будем счастливы видеть вас среди наших самых дорогих и близких гостей!",
-    kyz_uzatuu: "Уважаемые и дорогие наши гости!\n\nПриглашаем вас на торжественный вечер проводов невесты (Кыз узатуу). Будем искренне рады разделить с вами этот светлый, радостный и благословенный семейный праздник в кругу самых близких людей!",
-    birthday: "Дорогие друзья, родные и близкие!\n\nПриглашаю вас разделить со мной радость торжества и юбилея! В этот особенный день мне будет невероятно приятно собрать всех близких людей за одним праздничным столом и провести этот незабываемый вечер вместе.",
-    general: "Дорогие друзья, родные и близкие!\n\nС большой радостью приглашаем вас на наше праздничное семейное торжество! Будем счастливы разделить эти неповторимые мгновения радости, счастья и веселья вместе с вами!",
-    short: "Приглашаем вас разделить с нами радость этого праздничного дня! Ждём вас с нетерпением и радостью!"
-};
-
-function getDefaultInvitationTemplateKey() {
-    const et = (state.profile?.eventType || '').toLowerCase();
-    if (et.includes('свадьб')) return 'wedding';
-    if (et.includes('кыз') || et.includes('бешик')) return 'kyz_uzatuu';
-    if (et.includes('рожден') || et.includes('юбилей')) return 'birthday';
-    return 'general';
-}
-
-function openPrintModal(initialMode) {
-    if (initialMode) {
+function openPrintModal(initialMode = 'seating', initialRecipient = null) {
+    if (initialMode === 'invitation_general') {
+        printCurrentMode = 'invitation_general';
+    } else if (initialMode === 'invitation_personal') {
+        printCurrentMode = 'invitation_personal';
+    } else if (initialMode === 'invitation') {
+        printCurrentMode = (initialRecipient === 'general') ? 'invitation_general' : 'invitation_personal';
+    } else if (initialMode) {
         printCurrentMode = initialMode;
     }
+
+    // Если настройки были в мобильном дровере, возвращаем их на место в сайдбар ПК
+    const content = document.getElementById('print-settings-content');
+    const pcSlot = document.getElementById('pc-print-sidebar-slot');
+    if (content && pcSlot && content.parentElement !== pcSlot) {
+        pcSlot.appendChild(content);
+    }
+    const mobileDrawer = document.getElementById('mobile-print-settings-drawer');
+    if (mobileDrawer) mobileDrawer.classList.add('hidden');
 
     const select = document.getElementById('print-tables-per-page');
     if (select) {
@@ -762,6 +826,7 @@ function openPrintModal(initialMode) {
     const dateInput = document.getElementById('print-event-date');
     const timeInput = document.getElementById('print-event-time');
     const venueInput = document.getElementById('print-event-venue');
+    const hostsInput = document.getElementById('print-event-hosts');
 
     if (nameInput) nameInput.value = p.eventName || '';
     if (dateInput) dateInput.value = p.date || '';
@@ -770,22 +835,66 @@ function openPrintModal(initialMode) {
         timeInput.value = timeVal || '18:00 (сбор гостей в 17:30)';
     }
     if (venueInput) venueInput.value = p.venueName || '';
+    if (hostsInput) hostsInput.value = p.hosts || '';
 
-    // Инициализация текста приглашения
-    if (!printCustomInvitationText) {
-        const tKey = getDefaultInvitationTemplateKey();
-        printCustomInvitationText = invitationTemplates[tKey];
-        const templateSelect = document.getElementById('print-invitation-template-select');
-        if (templateSelect) templateSelect.value = tKey;
+    // Инициализация текстов пригласительных
+    const tKey = getDefaultInvitationTemplateKey();
+    if (!printCustomGeneralText) {
+        printCustomGeneralText = p.invitationText || invitationTemplates[tKey] || invitationTemplates.general;
     }
-    const invTextarea = document.getElementById('print-invitation-text');
-    if (invTextarea) {
-        invTextarea.value = printCustomInvitationText;
+    if (!printCustomPersonalText) {
+        printCustomPersonalText = p.invitationText || invitationTemplates[tKey] || invitationTemplates.wedding;
+    }
+
+    const genTextarea = document.getElementById('print-inv-gen-text');
+    if (genTextarea) genTextarea.value = printCustomGeneralText;
+
+    const persTextarea = document.getElementById('print-inv-pers-text');
+    if (persTextarea) persTextarea.value = printCustomPersonalText;
+
+    const genTplSelect = document.getElementById('print-inv-gen-template-select');
+    if (genTplSelect) genTplSelect.value = tKey;
+
+    const persTplSelect = document.getElementById('print-inv-pers-template-select');
+    if (persTplSelect) persTplSelect.value = tKey;
+
+    updatePrintGuestSelect(initialRecipient);
+
+    const filterSelect = document.getElementById('print-inv-pers-filter');
+    if (initialRecipient && initialRecipient !== 'general' && initialRecipient !== 'all_personal') {
+        if (filterSelect) filterSelect.value = 'selected_only';
+    } else {
+        if (filterSelect && filterSelect.value === 'selected_only') {
+            filterSelect.value = 'all';
+        }
     }
 
     applyPrintModeUI();
     updatePrintPreview();
     openModal('modal-print-guests');
+}
+
+function updatePrintGuestSelect(selectedGuestId = null) {
+    const sel = document.getElementById('print-inv-pers-guest-select');
+    if (!sel) return;
+    sel.innerHTML = '';
+
+    if (!state.guests || state.guests.length === 0) {
+        sel.innerHTML = '<option value="">Нет гостей в списке</option>';
+        return;
+    }
+
+    state.guests.forEach(g => {
+        const table = state.tables.find(t => t.id === g.tableId);
+        const tblName = table ? getTableName(table) : 'Без стола';
+        const opt = document.createElement('option');
+        opt.value = g.id;
+        opt.innerText = `${g.name} (${tblName})`;
+        if (selectedGuestId && g.id === selectedGuestId) {
+            opt.selected = true;
+        }
+        sel.appendChild(opt);
+    });
 }
 
 function switchPrintMode(mode) {
@@ -796,35 +905,108 @@ function switchPrintMode(mode) {
 
 function applyPrintModeUI() {
     const seatingBtn = document.getElementById('print-tab-seating-btn');
-    const invBtn = document.getElementById('print-tab-invitation-btn');
+    const schemaBtn = document.getElementById('print-tab-schema-btn');
+    const invGenBtn = document.getElementById('print-tab-inv-gen-btn');
+    const invPersBtn = document.getElementById('print-tab-inv-pers-btn');
+
+    const mobileSeatingBtn = document.getElementById('mobile-tab-btn-seating');
+    const mobileSchemaBtn = document.getElementById('mobile-tab-btn-schema');
+    const mobileInvGenBtn = document.getElementById('mobile-tab-btn-inv-gen');
+    const mobileInvPersBtn = document.getElementById('mobile-tab-btn-inv-pers');
+
     const seatingToolbar = document.getElementById('print-seating-toolbar');
-    const invToolbar = document.getElementById('print-invitation-toolbar');
-    const heading = document.getElementById('print-modal-heading');
+    const schemaToolbar = document.getElementById('print-schema-toolbar');
+    const invGenToolbar = document.getElementById('print-invitation-gen-toolbar');
+    const invPersToolbar = document.getElementById('print-invitation-pers-toolbar');
+
+    const pcHeading = document.getElementById('pc-print-modal-heading');
+    const sheetTitle = document.getElementById('preview-sheet-title');
+
+    // Сброс всех кнопок
+    [seatingBtn, schemaBtn, invGenBtn, invPersBtn].forEach(b => {
+        if (b) b.className = "py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 text-stone-600 hover:text-stone-900";
+    });
+    [mobileSeatingBtn, mobileSchemaBtn, mobileInvGenBtn, mobileInvPersBtn].forEach(b => {
+        if (b) b.className = "px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white";
+    });
+
+    if (seatingToolbar) seatingToolbar.classList.add('hidden');
+    if (schemaToolbar) schemaToolbar.classList.add('hidden');
+    if (invGenToolbar) invGenToolbar.classList.add('hidden');
+    if (invPersToolbar) invPersToolbar.classList.add('hidden');
 
     if (printCurrentMode === 'seating') {
-        if (seatingBtn) seatingBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-xs";
-        if (invBtn) invBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900";
+        if (seatingBtn) seatingBtn.className = "py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 bg-emerald-800 text-white shadow-xs";
+        if (mobileSeatingBtn) mobileSeatingBtn.className = "px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-2xs";
         if (seatingToolbar) seatingToolbar.classList.remove('hidden');
-        if (invToolbar) invToolbar.classList.add('hidden');
-        if (heading) heading.innerText = "Печать рассадки гостей (Формат А4)";
+        if (pcHeading) pcHeading.innerText = "Центр печати: Списки столов и рассадка (Формат А4)";
+        if (sheetTitle) sheetTitle.innerText = "План рассадки столов (А4)";
+    } else if (printCurrentMode === 'schema') {
+        if (schemaBtn) schemaBtn.className = "py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 bg-emerald-800 text-white shadow-xs";
+        if (mobileSchemaBtn) mobileSchemaBtn.className = "px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-2xs";
+        if (schemaToolbar) schemaToolbar.classList.remove('hidden');
+        if (pcHeading) pcHeading.innerText = "Центр печати: Схема расстановки зала (Формат А4)";
+        if (sheetTitle) sheetTitle.innerText = "Схема зала (А4)";
+    } else if (printCurrentMode === 'invitation_general') {
+        if (invGenBtn) invGenBtn.className = "py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 bg-emerald-800 text-white shadow-xs";
+        if (mobileInvGenBtn) mobileInvGenBtn.className = "px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-2xs";
+        if (invGenToolbar) invGenToolbar.classList.remove('hidden');
+        if (pcHeading) pcHeading.innerText = "Центр печати: Общий пригласительный билет (Формат А4)";
+        if (sheetTitle) sheetTitle.innerText = "Общий пригласительный билет (А4)";
     } else {
-        if (seatingBtn) seatingBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900";
-        if (invBtn) invBtn.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-xs";
-        if (seatingToolbar) seatingToolbar.classList.add('hidden');
-        if (invToolbar) invToolbar.classList.remove('hidden');
-        if (heading) heading.innerText = "Печать праздничных пригласительных (Формат А4)";
+        if (invPersBtn) invPersBtn.className = "py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 bg-emerald-800 text-white shadow-xs";
+        if (mobileInvPersBtn) mobileInvPersBtn.className = "px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-2xs";
+        if (invPersToolbar) invPersToolbar.classList.remove('hidden');
+        if (pcHeading) pcHeading.innerText = "Центр печати: Персональные пригласительные карточки (Формат А4)";
+        if (sheetTitle) sheetTitle.innerText = "Персональные карточки гостей (А4)";
     }
+    lucide.createIcons();
 }
 
-function togglePrintEventDetails() {
-    const drawer = document.getElementById('print-event-details-drawer');
-    const btn = document.getElementById('btn-toggle-print-details');
+function openMobilePrintSettingsDrawer() {
+    const content = document.getElementById('print-settings-content');
+    const target = document.getElementById('mobile-print-controls-target');
+    const drawer = document.getElementById('mobile-print-settings-drawer');
+    if (content && target && content.parentElement !== target) {
+        target.appendChild(content);
+    }
     if (drawer) {
-        const isHidden = drawer.classList.contains('hidden');
-        drawer.classList.toggle('hidden');
-        if (btn) {
-            btn.classList.toggle('bg-emerald-100', isHidden);
-            btn.classList.toggle('border-emerald-300', isHidden);
+        drawer.classList.remove('hidden');
+    }
+    lucide.createIcons();
+}
+
+function closeMobilePrintSettingsDrawer() {
+    const content = document.getElementById('print-settings-content');
+    const pcSlot = document.getElementById('pc-print-sidebar-slot');
+    const drawer = document.getElementById('mobile-print-settings-drawer');
+    if (content && pcSlot && content.parentElement !== pcSlot) {
+        pcSlot.appendChild(content);
+    }
+    if (drawer) {
+        drawer.classList.add('hidden');
+    }
+    lucide.createIcons();
+}
+
+// При изменении размера экрана возвращаем настройки в сайдбар ПК
+window.addEventListener('resize', () => {
+    if (window.innerWidth >= 768) {
+        closeMobilePrintSettingsDrawer();
+    }
+});
+
+function togglePrintZoomFit() {
+    printIsZoomFit = !printIsZoomFit;
+    const btnText = document.getElementById('btn-print-zoom-text');
+    const container = document.getElementById('print-preview-container');
+    if (btnText && container) {
+        if (printIsZoomFit) {
+            btnText.innerText = 'По ширине';
+            container.classList.remove('scale-90');
+        } else {
+            btnText.innerText = '100%';
+            container.classList.add('scale-90');
         }
     }
 }
@@ -841,19 +1023,50 @@ function handlePrintEventDetailsChange() {
 
     saveState();
     updatePrintPreview();
+    if (typeof renderProfileView === 'function') {
+        renderProfileView();
+    }
 }
 
-function applyInvitationTemplate(templateKey) {
-    if (invitationTemplates[templateKey]) {
-        printCustomInvitationText = invitationTemplates[templateKey];
-        const textarea = document.getElementById('print-invitation-text');
-        if (textarea) textarea.value = printCustomInvitationText;
+function applyGeneralInvitationTemplate(templateKey) {
+    if (typeof invitationTemplates !== 'undefined' && invitationTemplates[templateKey]) {
+        printCustomGeneralText = invitationTemplates[templateKey];
+        if (state.profile) {
+            state.profile.invitationText = printCustomGeneralText;
+            saveState();
+        }
+        const textarea = document.getElementById('print-inv-gen-text');
+        if (textarea) textarea.value = printCustomGeneralText;
+        updatePrintPreview();
+        if (typeof renderMainInvitationCard === 'function') {
+            renderMainInvitationCard();
+        }
+    }
+}
+
+function handleGeneralInvitationTextChange(event) {
+    printCustomGeneralText = event.target.value;
+    if (state.profile) {
+        state.profile.invitationText = printCustomGeneralText;
+        saveState();
+    }
+    updatePrintPreview();
+    if (typeof renderMainInvitationCard === 'function') {
+        renderMainInvitationCard();
+    }
+}
+
+function applyPersonalInvitationTemplate(templateKey) {
+    if (typeof invitationTemplates !== 'undefined' && invitationTemplates[templateKey]) {
+        printCustomPersonalText = invitationTemplates[templateKey];
+        const textarea = document.getElementById('print-inv-pers-text');
+        if (textarea) textarea.value = printCustomPersonalText;
         updatePrintPreview();
     }
 }
 
-function handleInvitationTextChange(event) {
-    printCustomInvitationText = event.target.value;
+function handlePersonalInvitationTextChange(event) {
+    printCustomPersonalText = event.target.value;
     updatePrintPreview();
 }
 
@@ -863,6 +1076,14 @@ function getPrintEventInfo() {
     const dateInputVal = document.getElementById('print-event-date')?.value;
     const timeInputVal = document.getElementById('print-event-time')?.value?.trim();
     const venueInputVal = document.getElementById('print-event-venue')?.value?.trim();
+    const hostsInputVal = document.getElementById('print-event-hosts')?.value?.trim();
+
+    const showHdrName = document.getElementById('print-hdr-name')?.checked !== false;
+    const showHdrDate = document.getElementById('print-hdr-date')?.checked !== false;
+    const showHdrTime = document.getElementById('print-hdr-time')?.checked !== false;
+    const showHdrVenue = document.getElementById('print-hdr-venue')?.checked !== false;
+    const showHdrHosts = document.getElementById('print-hdr-hosts')?.checked !== false;
+    const showHdrFooter = document.getElementById('print-hdr-footer')?.checked !== false;
 
     const eventTitle = nameInputVal || p.eventName?.trim() || 'Торжественное мероприятие';
     const eventType = p.eventType || 'Торжество';
@@ -874,14 +1095,88 @@ function getPrintEventInfo() {
     }
 
     const eventVenueFormatted = venueInputVal || p.venueName?.trim() || 'Место проведения уточняется';
+    const eventHostsFormatted = hostsInputVal || p.hosts || '';
 
     return {
         eventTitle,
         eventType,
         eventDate,
         eventTimeFormatted,
-        eventVenueFormatted
+        eventVenueFormatted,
+        eventHostsFormatted,
+        showHdrName,
+        showHdrDate,
+        showHdrTime,
+        showHdrVenue,
+        showHdrHosts,
+        showHdrFooter
     };
+}
+
+function buildPrintHeaderHtml(options) {
+    const {
+        eventTitle,
+        eventType,
+        eventDate,
+        eventTimeFormatted,
+        eventVenueFormatted,
+        eventHostsFormatted,
+        showHdrName,
+        showHdrDate,
+        showHdrTime,
+        showHdrVenue,
+        showHdrHosts,
+        badgeText = 'ПЛАН РАССАДКИ ГОСТЕЙ',
+        badgeColor = 'emerald',
+        pageNum = 1,
+        totalPages = 1,
+        subInfo = ''
+    } = options;
+
+    const badgeColorClasses = badgeColor === 'amber' 
+        ? 'text-amber-900 bg-amber-50 border-amber-300'
+        : (badgeColor === 'rose' ? 'text-rose-900 bg-rose-50 border-rose-300' : 'text-emerald-900 bg-emerald-50 border-emerald-300');
+
+    let metaItems = [];
+    if (showHdrDate && eventDate) {
+        metaItems.push(`<span class="flex items-center gap-1">📅 <strong>Дата:</strong> ${escapeHtml(eventDate)}</span>`);
+    }
+    if (showHdrTime && eventTimeFormatted) {
+        metaItems.push(`<span class="flex items-center gap-1">🕒 <strong>Время:</strong> ${escapeHtml(eventTimeFormatted)}</span>`);
+    }
+    if (showHdrVenue && eventVenueFormatted) {
+        metaItems.push(`<span class="flex items-center gap-1">📍 <strong>Место:</strong> ${escapeHtml(eventVenueFormatted)}</span>`);
+    }
+    if (showHdrHosts && eventHostsFormatted) {
+        metaItems.push(`<span class="flex items-center gap-1">👑 <strong>Организаторы:</strong> ${escapeHtml(eventHostsFormatted)}</span>`);
+    }
+
+    const titleHtml = showHdrName 
+        ? `<h2 class="text-lg md:text-xl font-extrabold text-stone-900 leading-tight">${escapeHtml(eventTitle)}</h2>`
+        : '';
+
+    const metaHtml = metaItems.length > 0 
+        ? `<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-stone-700 pt-0.5 font-medium">${metaItems.join('')}</div>`
+        : '';
+
+    return `
+        <div class="border-b-2 border-stone-900 pb-2 mb-3.5 flex justify-between items-start">
+            <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] uppercase tracking-widest font-bold border px-2 py-0.5 rounded ${badgeColorClasses}">${escapeHtml(eventType)}</span>
+                    <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">${escapeHtml(badgeText)}</span>
+                </div>
+                ${titleHtml}
+                ${metaHtml}
+            </div>
+            <div class="text-right shrink-0">
+                <div class="bg-stone-900 text-white text-[10px] uppercase font-bold px-2.5 py-1 rounded-md">
+                    Лист ${pageNum} из ${totalPages}
+                </div>
+                ${subInfo ? `<span class="text-[10px] text-stone-400 block mt-1 font-semibold">${escapeHtml(subInfo)}</span>` : ''}
+            </div>
+        </div>
+    `;
 }
 
 function updatePrintPreview() {
@@ -889,8 +1184,12 @@ function updatePrintPreview() {
     const printOutputArea = document.getElementById('print-output-area');
     if (!previewContainer) return;
 
-    if (printCurrentMode === 'invitation') {
-        renderInvitationPrintPreview(previewContainer, printOutputArea);
+    if (printCurrentMode === 'invitation_general') {
+        renderInvitationPrintPreview(previewContainer, printOutputArea, 'general');
+    } else if (printCurrentMode === 'invitation_personal') {
+        renderInvitationPrintPreview(previewContainer, printOutputArea, 'personal');
+    } else if (printCurrentMode === 'schema') {
+        renderSchemaPrintPreview(previewContainer, printOutputArea);
     } else {
         renderSeatingPrintPreview(previewContainer, printOutputArea);
     }
@@ -908,7 +1207,8 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
     const optEmptySeats = document.getElementById('print-opt-empty-seats')?.checked !== false;
     const optUnassigned = document.getElementById('print-opt-unassigned')?.checked !== false;
 
-    const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted } = getPrintEventInfo();
+    const info = getPrintEventInfo();
+    const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, eventHostsFormatted, showHdrName, showHdrDate, showHdrTime, showHdrVenue, showHdrHosts, showHdrFooter } = info;
 
     // Сортировка столов по номерам
     const sortedTables = [...state.tables].sort((a, b) => (a.number || 0) - (b.number || 0));
@@ -997,42 +1297,41 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
             `;
         });
 
+        const pageHeaderHtml = buildPrintHeaderHtml({
+            eventTitle,
+            eventType,
+            eventDate,
+            eventTimeFormatted,
+            eventVenueFormatted,
+            eventHostsFormatted,
+            showHdrName,
+            showHdrDate,
+            showHdrTime,
+            showHdrVenue,
+            showHdrHosts,
+            badgeText: 'ПЛАН РАССАДКИ ГОСТЕЙ',
+            badgeColor: 'emerald',
+            pageNum: pageIndex + 1,
+            totalPages: totalPages,
+            subInfo: `Столы: ${chunk.map(t => '#' + t.number).join(', ')}`
+        });
+
+        const footerHtml = showHdrFooter ? `
+            <div class="border-t border-stone-300 pt-2 mt-4 flex justify-between items-center text-[9px] text-stone-400 select-none">
+                <span>EM Pro v3 • Распечатано: ${new Date().toLocaleDateString('ru-RU')}</span>
+                <span>Всего гостей за столами: ${state.guests.filter(g => g.tableId && g.tableId !== 'none').length} чел.</span>
+            </div>
+        ` : '';
+
         htmlPages += `
             <div class="a4-sheet-preview print-page-sheet flex flex-col justify-between">
                 <div>
-                    <!-- Заголовок страницы А4 с временем, названием и местом -->
-                    <div class="border-b-2 border-stone-900 pb-2 mb-3.5 flex justify-between items-start">
-                        <div class="space-y-0.5">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] uppercase tracking-widest text-emerald-800 font-bold bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded">${escapeHtml(eventType)}</span>
-                                <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">ПЛАН РАССАДКИ ГОСТЕЙ</span>
-                            </div>
-                            <h2 class="text-lg md:text-xl font-extrabold text-stone-900 leading-tight">${escapeHtml(eventTitle)}</h2>
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-stone-700 pt-0.5 font-medium">
-                                <span class="flex items-center gap-1">📅 <strong>Дата:</strong> ${escapeHtml(eventDate)}</span>
-                                <span class="flex items-center gap-1">🕒 <strong>Время:</strong> ${escapeHtml(eventTimeFormatted)}</span>
-                                <span class="flex items-center gap-1">📍 <strong>Место проведения:</strong> ${escapeHtml(eventVenueFormatted)}</span>
-                            </div>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <div class="bg-stone-900 text-white text-[10px] uppercase font-bold px-2.5 py-1 rounded-md">
-                                Лист ${pageIndex + 1} из ${totalPages}
-                            </div>
-                            <span class="text-[10px] text-stone-400 block mt-1 font-semibold">Столы: ${chunk.map(t => '#' + t.number).join(', ')}</span>
-                        </div>
-                    </div>
-
-                    <!-- Сетка столов (например 4 стола на страницу: 2х2) -->
+                    ${pageHeaderHtml}
                     <div class="${gridClass}">
                         ${tablesHtml}
                     </div>
                 </div>
-
-                <!-- Подвал листа А4 -->
-                <div class="border-t border-stone-300 pt-2 mt-4 flex justify-between items-center text-[9px] text-stone-400 select-none">
-                    <span>EM Pro v3 • Распечатано: ${new Date().toLocaleDateString('ru-RU')}</span>
-                    <span>Всего гостей за столами: ${state.guests.filter(g => g.tableId && g.tableId !== 'none').length} чел.</span>
-                </div>
+                ${footerHtml}
             </div>
         `;
     });
@@ -1053,30 +1352,36 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
             `;
         });
 
+        const unassignedHeader = buildPrintHeaderHtml({
+            eventTitle,
+            eventType,
+            eventDate,
+            eventTimeFormatted,
+            eventVenueFormatted,
+            eventHostsFormatted,
+            showHdrName,
+            showHdrDate,
+            showHdrTime,
+            showHdrVenue,
+            showHdrHosts,
+            badgeText: 'ГОСТИ БЕЗ СТОЛА / РЕЗЕРВ',
+            badgeColor: 'rose',
+            pageNum: totalPages,
+            totalPages: totalPages,
+            subInfo: 'Резерв'
+        });
+
+        const footerHtml = showHdrFooter ? `
+            <div class="border-t border-stone-300 pt-2 mt-4 flex justify-between items-center text-[9px] text-stone-400">
+                <span>EM Pro v3 • Нерассаженные гости: ${unassignedGuests.length} чел.</span>
+                <span>Лист ${totalPages} из ${totalPages}</span>
+            </div>
+        ` : '';
+
         htmlPages += `
             <div class="a4-sheet-preview print-page-sheet flex flex-col justify-between">
                 <div>
-                    <div class="border-b-2 border-stone-900 pb-2 mb-3.5 flex justify-between items-start">
-                        <div class="space-y-0.5">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] uppercase tracking-widest text-rose-800 font-bold bg-rose-50 border border-rose-300 px-2 py-0.5 rounded">${escapeHtml(eventType)}</span>
-                                <span class="text-xs font-bold text-stone-500 uppercase tracking-wider">ГОСТИ БЕЗ СТОЛА / РЕЗЕРВ</span>
-                            </div>
-                            <h2 class="text-lg md:text-xl font-extrabold text-stone-900 leading-tight">${escapeHtml(eventTitle)}</h2>
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-stone-700 pt-0.5 font-medium">
-                                <span class="flex items-center gap-1">📅 <strong>Дата:</strong> ${escapeHtml(eventDate)}</span>
-                                <span class="flex items-center gap-1">🕒 <strong>Время:</strong> ${escapeHtml(eventTimeFormatted)}</span>
-                                <span class="flex items-center gap-1">📍 <strong>Место проведения:</strong> ${escapeHtml(eventVenueFormatted)}</span>
-                            </div>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <div class="bg-stone-900 text-white text-[10px] uppercase font-bold px-2.5 py-1 rounded-md">
-                                Лист ${totalPages} из ${totalPages}
-                            </div>
-                            <span class="text-[10px] text-stone-400 block mt-1 font-semibold">Резерв</span>
-                        </div>
-                    </div>
-
+                    ${unassignedHeader}
                     <div class="border-2 border-stone-800 rounded-xl overflow-hidden">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead>
@@ -1094,11 +1399,7 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
                         </table>
                     </div>
                 </div>
-
-                <div class="border-t border-stone-300 pt-2 mt-4 flex justify-between items-center text-[9px] text-stone-400">
-                    <span>EM Pro v3 • Нерассаженные гости: ${unassignedGuests.length} чел.</span>
-                    <span>Лист ${totalPages} из ${totalPages}</span>
-                </div>
+                ${footerHtml}
             </div>
         `;
     }
@@ -1119,27 +1420,186 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
     lucide.createIcons();
 }
 
-function renderInvitationPrintPreview(previewContainer, printOutputArea) {
-    const layoutSelect = document.getElementById('print-invitation-layout');
-    if (layoutSelect) {
-        printInvitationLayout = parseInt(layoutSelect.value) || 2;
+function renderSchemaPrintPreview(previewContainer, printOutputArea) {
+    const orientationSelect = document.getElementById('print-schema-orientation');
+    const orientation = orientationSelect ? orientationSelect.value : 'landscape';
+    const isLandscape = orientation === 'landscape';
+
+    const optLegend = document.getElementById('print-schema-opt-legend')?.checked !== false;
+    const optSummary = document.getElementById('print-schema-opt-summary')?.checked !== false;
+
+    const info = getPrintEventInfo();
+    const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, eventHostsFormatted, showHdrName, showHdrDate, showHdrTime, showHdrVenue, showHdrHosts, showHdrFooter } = info;
+
+    const schemaImgUrl = (typeof getCanvasPrintImage === 'function') ? getCanvasPrintImage() : null;
+
+    const totalTables = state.tables.length;
+    const totalCapacity = state.tables.reduce((acc, t) => acc + (t.capacity || 0), 0);
+    const seatedCount = state.guests.filter(g => g.tableId && g.tableId !== 'none').length;
+    const freeCount = Math.max(0, totalCapacity - seatedCount);
+    const seatedPercent = totalCapacity > 0 ? Math.round((seatedCount / totalCapacity) * 100) : 0;
+
+    const headerHtml = buildPrintHeaderHtml({
+        eventTitle,
+        eventType,
+        eventDate,
+        eventTimeFormatted,
+        eventVenueFormatted,
+        eventHostsFormatted,
+        showHdrName,
+        showHdrDate,
+        showHdrTime,
+        showHdrVenue,
+        showHdrHosts,
+        badgeText: 'СХЕМА РАССТАНОВКИ СТОЛОВ ЗАЛА',
+        badgeColor: 'amber',
+        pageNum: 1,
+        totalPages: 1,
+        subInfo: `Всего столов: ${totalTables}`
+    });
+
+    const legendHtml = optLegend ? `
+        <div class="bg-stone-50 border border-stone-200/90 rounded-xl p-2 px-3 mb-2.5 flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold text-stone-700">
+            <span class="font-bold uppercase tracking-wider text-stone-500 text-[9px]">Обозначения:</span>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded bg-amber-100 border border-amber-400 inline-block"></span>
+                <span>Президиум (Сцена)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-emerald-900 border border-amber-400 inline-block"></span>
+                <span>Занятое место</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-white border border-stone-300 inline-block"></span>
+                <span>Свободное место</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-emerald-50 border border-emerald-600 inline-block"></span>
+                <span>Стол рассадки</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="w-3.5 h-3.5 rounded-full bg-red-50 border-2 border-red-600 inline-block"></span>
+                <span>Полный стол (100%)</span>
+            </div>
+        </div>
+    ` : '';
+
+    const summaryHtml = optSummary ? `
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2 text-center">
+            <div class="bg-stone-50 border border-stone-200 rounded-lg p-1.5">
+                <span class="text-[9px] text-stone-500 uppercase font-bold block">Столов в зале</span>
+                <span class="text-sm font-extrabold text-stone-900">${totalTables}</span>
+            </div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-1.5">
+                <span class="text-[9px] text-emerald-800 uppercase font-bold block">Вместимость зала</span>
+                <span class="text-sm font-extrabold text-emerald-950">${totalCapacity} мест</span>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-1.5">
+                <span class="text-[9px] text-amber-800 uppercase font-bold block">Рассажено гостей</span>
+                <span class="text-sm font-extrabold text-amber-950">${seatedCount} чел (${seatedPercent}%)</span>
+            </div>
+            <div class="bg-stone-50 border border-stone-200 rounded-lg p-1.5">
+                <span class="text-[9px] text-stone-500 uppercase font-bold block">Свободных мест</span>
+                <span class="text-sm font-extrabold text-stone-700">${freeCount} мест</span>
+            </div>
+        </div>
+    ` : '';
+
+    let imageBlock = '';
+    if (schemaImgUrl) {
+        imageBlock = `
+            <div class="border-2 border-stone-800 rounded-2xl overflow-hidden bg-white shadow-xs p-1 flex items-center justify-center relative my-1">
+                <img src="${schemaImgUrl}" alt="Схема зала" class="w-full ${isLandscape ? 'max-h-[125mm]' : 'max-h-[160mm]'} object-contain mx-auto">
+            </div>
+        `;
+    } else {
+        imageBlock = `
+            <div class="border-2 border-dashed border-stone-300 rounded-2xl p-10 text-center text-stone-400">
+                <i data-lucide="map" class="w-12 h-12 mx-auto mb-2 text-stone-300"></i>
+                <p class="font-bold text-xs">Схема пока пуста. Добавьте столы во вкладке «Столы» или «Схема зала»</p>
+            </div>
+        `;
     }
-    const recipSelect = document.getElementById('print-invitation-recipient');
-    if (recipSelect) {
-        printInvitationRecipient = recipSelect.value || 'all_personal';
+
+    const footerHtml = showHdrFooter ? `
+        <div class="border-t border-stone-300 pt-2 mt-3 flex justify-between items-center text-[9px] text-stone-500 select-none">
+            <span>EM Pro v3 • Схема расстановки столов в банкетном зале • Сформировано: ${new Date().toLocaleDateString('ru-RU')}</span>
+            <div class="flex items-center gap-6">
+                <span>Администратор зала: _______________</span>
+                <span>Организатор: _______________</span>
+                <span>Лист 1 из 1</span>
+            </div>
+        </div>
+    ` : '';
+
+    const pageClass = isLandscape ? 'a4-sheet-preview a4-sheet-landscape print-page-sheet' : 'a4-sheet-preview print-page-sheet';
+
+    const html = `
+        <div class="${pageClass} flex flex-col justify-between">
+            <div>
+                ${headerHtml}
+                ${legendHtml}
+                ${summaryHtml}
+                ${imageBlock}
+            </div>
+            ${footerHtml}
+        </div>
+    `;
+
+    previewContainer.innerHTML = html;
+    if (printOutputArea) {
+        printOutputArea.innerHTML = html;
     }
+    lucide.createIcons();
+}
+
+function renderInvitationPrintPreview(previewContainer, printOutputArea, invitationType = 'general') {
+    const isGeneral = invitationType === 'general';
+    const layoutSelect = isGeneral 
+        ? document.getElementById('print-inv-gen-layout')
+        : document.getElementById('print-inv-pers-layout');
+    
+    const layout = layoutSelect ? (parseInt(layoutSelect.value) || 2) : 2;
 
     const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted } = getPrintEventInfo();
-    const invText = document.getElementById('print-invitation-text')?.value?.trim() || printCustomInvitationText || invitationTemplates.wedding;
+    
+    let invText = '';
+    if (isGeneral) {
+        invText = document.getElementById('print-inv-gen-text')?.value?.trim() || printCustomGeneralText || invitationTemplates.general;
+    } else {
+        invText = document.getElementById('print-inv-pers-text')?.value?.trim() || printCustomPersonalText || invitationTemplates.wedding;
+    }
 
-    // Список получателей для генерации
     let guestCardsData = [];
-    if (printInvitationRecipient === 'all_personal') {
-        if (state.guests && state.guests.length > 0) {
-            guestCardsData = state.guests.map(g => {
+    if (isGeneral) {
+        // ОБЩИЙ ПРИГЛАСИТЕЛЬНЫЙ: генерирует ровно один лист А4 с пустыми строками для рукописного заполнения
+        for (let i = 0; i < layout; i++) {
+            guestCardsData.push({
+                name: null,
+                tableInfo: 'Праздничный стол торжества',
+                isPersonal: false
+            });
+        }
+    } else {
+        // ПЕРСОНАЛЬНЫЕ ПРИГЛАСИТЕЛЬНЫЕ: генерирует карточки с именами конкретных гостей и их столами
+        const filterVal = document.getElementById('print-inv-pers-filter')?.value || 'all';
+        let targetGuests = [...state.guests];
+        if (filterVal === 'selected_only') {
+            const selGuestId = document.getElementById('print-inv-pers-guest-select')?.value;
+            const singleGuest = state.guests.find(g => g.id === selGuestId);
+            if (singleGuest) {
+                targetGuests = [singleGuest];
+            }
+        } else if (filterVal === 'seated_only') {
+            targetGuests = targetGuests.filter(g => g.tableId && g.tableId !== 'none');
+        }
+
+        if (targetGuests.length > 0) {
+            guestCardsData = targetGuests.map(g => {
                 const table = state.tables.find(t => t.id === g.tableId);
                 const tableInfo = table ? `${getTableName(table)}${table.name ? ` («${table.name}»)` : ''}` : 'Персональное место за праздничным столом';
                 return {
+                    id: g.id,
                     name: g.name,
                     tableInfo: tableInfo,
                     isPersonal: true
@@ -1152,19 +1612,10 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea) {
                 isPersonal: true
             }];
         }
-    } else {
-        // Общий бланк (генерируем ровно одну страницу с 1, 2 или 4 карточками)
-        for (let i = 0; i < printInvitationLayout; i++) {
-            guestCardsData.push({
-                name: null,
-                tableInfo: 'Праздничный стол торжества',
-                isPersonal: false
-            });
-        }
     }
 
     // Разбиваем на листы А4 по layout (1, 2 или 4 на лист)
-    const cardsPerPage = printInvitationLayout;
+    const cardsPerPage = layout;
     const pages = [];
     for (let i = 0; i < guestCardsData.length; i += cardsPerPage) {
         pages.push(guestCardsData.slice(i, i + cardsPerPage));
@@ -1176,7 +1627,7 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea) {
         let cardsHtml = '';
 
         if (cardsPerPage === 1) {
-            // 1 роскошное большое приглашение на лист А4
+            // 1 роскошный большой билет на весь лист А4
             const card = pageCards[0];
             cardsHtml = `
                 <div class="h-full flex flex-col justify-center">
@@ -1226,7 +1677,7 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea) {
                     ${cardsHtml}
                 </div>
                 <div class="border-t border-stone-200 pt-1.5 mt-2 flex justify-between items-center text-[9px] text-stone-400 select-none">
-                    <span>EM Pro v3 • Праздничные пригласительные</span>
+                    <span>EM Pro v3 • ${isGeneral ? 'Общий пригласительный билет' : 'Персональные пригласительные карточки'}</span>
                     <span>Лист ${pageIdx + 1} из ${pages.length}</span>
                 </div>
             </div>
@@ -1323,8 +1774,103 @@ function buildSingleInvitationCardHtml(cardData, eventTitle, eventType, eventDat
     `;
 }
 
+function sendWhatsAppPersonalInvitation(guestId) {
+    const guest = state.guests.find(g => g.id === guestId);
+    if (!guest) {
+        showToast('Гость не найден');
+        return;
+    }
+
+    const p = state.profile || {};
+    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+    const dateText = p.date ? formatDate(p.date) : '';
+    const timeText = p.timeStart ? `${p.timeStart}${p.timeEnd ? ` – ${p.timeEnd}` : ''}` : '';
+    const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : '';
+    const table = state.tables.find(t => t.id === guest.tableId);
+    const tableName = table ? `${getTableName(table)}${table.name ? ` («${table.name}»)` : ''}` : 'Праздничный стол';
+    const seatInfo = (guest.seatIndex !== undefined && guest.seatIndex !== -1) ? ` (Место № ${guest.seatIndex + 1})` : '';
+
+    let msg = `✨ *ПЕРСОНАЛЬНОЕ ПРИГЛАШЕНИЕ* ✨\n\n`;
+    msg += `Уважаемый(ая) *${guest.name}*!\n\n`;
+    msg += `С искренней радостью приглашаем Вас на наше торжество: *«${eventTitle}»*!\n\n`;
+    if (dateText) msg += `📅 *Дата:* ${dateText}\n`;
+    if (timeText) msg += `🕒 *Время сбора:* ${timeText}\n`;
+    if (venueText) msg += `📍 *Место проведения:* ${venueText}\n`;
+    msg += `🍽️ *Ваш столик:* *${tableName}*${seatInfo}\n`;
+    if (p.venueLink && p.venueLink.trim()) msg += `🗺️ *Карта / 2ГИС:* ${p.venueLink.trim()}\n`;
+    msg += `\nБудем счастливы разделить этот особенный день вместе с Вами! ✨\n`;
+
+    let cleanPhone = (guest.phone || '').replace(/[^0-9+]/g, '');
+    if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
+    
+    let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    if (cleanPhone && cleanPhone.length >= 9) {
+        url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+    }
+    
+    window.open(url, '_blank');
+    showToast(`Приглашение для «${guest.name}» готово к отправке в WhatsApp`);
+}
+
+function sendWhatsAppPersonalInvitationPDF(guestId) {
+    const guest = state.guests.find(g => g.id === guestId);
+    if (!guest) return;
+    
+    openPrintModal('invitation_personal', guest.id);
+    
+    const p = state.profile || {};
+    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+    const dateText = p.date ? formatDate(p.date) : '';
+    const table = state.tables.find(t => t.id === guest.tableId);
+    const tableName = table ? `${getTableName(table)}${table.name ? ` («${table.name}»)` : ''}` : 'Праздничный стол';
+
+    let msg = `✨ *ПЕРСОНАЛЬНОЕ ПРИГЛАШЕНИЕ (PDF)* ✨\n\n`;
+    msg += `Уважаемый(ая) *${guest.name}*!\n`;
+    msg += `Приглашаем Вас на торжество *«${eventTitle}»*! 📅 ${dateText}\n`;
+    msg += `🍽️ Стол рассадки: *${tableName}*\n`;
+    msg += `📄 _(Прикрепляю персональный пригласительный билет в PDF)_ ✨\n`;
+
+    let cleanPhone = (guest.phone || '').replace(/[^0-9+]/g, '');
+    if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
+    
+    showToast(`Сформирован билет для «${guest.name}». Сохраните в PDF и отправьте в чат`);
+    setTimeout(() => {
+        let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+        if (cleanPhone && cleanPhone.length >= 9) {
+            url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+        }
+        window.open(url, '_blank');
+    }, 700);
+}
+
+function sendSelectedGuestWhatsApp() {
+    const sel = document.getElementById('print-inv-pers-guest-select');
+    const guestId = sel ? sel.value : null;
+    if (guestId) {
+        sendWhatsAppPersonalInvitation(guestId);
+    } else {
+        showToast('Выберите гостя из списка');
+    }
+}
+
+function sendSelectedGuestWhatsAppPDF() {
+    const sel = document.getElementById('print-inv-pers-guest-select');
+    const guestId = sel ? sel.value : null;
+    if (guestId) {
+        sendWhatsAppPersonalInvitationPDF(guestId);
+    } else {
+        showToast('Выберите гостя из списка');
+    }
+}
+
 function triggerPrint() {
     updatePrintPreview();
+    const orientation = document.getElementById('print-schema-orientation')?.value;
+    if (printCurrentMode === 'schema' && orientation === 'landscape') {
+        document.body.classList.add('print-landscape-mode');
+    } else {
+        document.body.classList.remove('print-landscape-mode');
+    }
     window.print();
 }
 

@@ -109,6 +109,22 @@ function openTableModal(tableId = null) {
     }
 
     editingGuestIdInTableModal = null;
+
+    const showCat = state.profile?.trackCategories !== false;
+    const catContainer = document.getElementById('table-category')?.parentElement;
+    const capContainer = document.getElementById('table-capacity')?.parentElement;
+    if (catContainer && capContainer) {
+        if (!showCat) {
+            catContainer.classList.add('hidden');
+            capContainer.parentElement.classList.remove('grid-cols-2');
+            capContainer.parentElement.classList.add('grid-cols-1');
+        } else {
+            catContainer.classList.remove('hidden');
+            capContainer.parentElement.classList.add('grid-cols-2');
+            capContainer.parentElement.classList.remove('grid-cols-1');
+        }
+    }
+
     renderTableModalGuests(idInput.value);
     hideTableInlineAddGuest();
     hideTableBulkPaste();
@@ -494,11 +510,20 @@ function openTableDetailsModal(tableId) {
     const table = state.tables.find(t => t.id === tableId);
     if (!table) return;
     
-    const cat = state.categories.find(c => c.id === table.categoryId);
+    const showCat = state.profile?.trackCategories !== false;
+    const cat = showCat ? state.categories.find(c => c.id === table.categoryId) : null;
     const seatedCount = state.guests.filter(g => g.tableId === tableId).length;
     
     document.getElementById('detail-table-name').innerText = getTableName(table);
-    document.getElementById('detail-table-category').innerText = cat ? `Назначение: ${cat.name}` : 'Назначение: Без категории';
+    const detailCatEl = document.getElementById('detail-table-category');
+    if (detailCatEl) {
+        if (!showCat) {
+            detailCatEl.classList.add('hidden');
+        } else {
+            detailCatEl.classList.remove('hidden');
+            detailCatEl.innerText = cat ? `Назначение: ${cat.name}` : 'Назначение: Без категории';
+        }
+    }
     document.getElementById('detail-table-capacity').innerText = `${seatedCount} / ${table.capacity} мест`;
     
     const statusEl = document.getElementById('detail-table-status');
@@ -529,9 +554,12 @@ function renderTableDetailsGuests(tableId) {
         lucide.createIcons();
         return;
     }
+
+    const showCat = state.profile?.trackCategories !== false;
+    const showPhone = state.profile?.trackPhones !== false;
     
     tableGuests.forEach(guest => {
-        const cat = state.categories.find(c => c.id === guest.categoryId);
+        const cat = showCat ? state.categories.find(c => c.id === guest.categoryId) : null;
         const row = document.createElement('div');
         row.className = 'flex items-center justify-between p-2.5 bg-stone-50 rounded-xl border border-stone-200/60 text-xs';
         
@@ -543,11 +571,15 @@ function renderTableDetailsGuests(tableId) {
                 moveOptions += `<option value="${t.id}" ${free <= 0 ? 'disabled' : ''}>${getTableName(t)} (свободно: ${free})</option>`;
             }
         });
+
+        const catBadgeHtml = showCat ? `<span class="text-[9px] text-stone-400 font-semibold block truncate">${cat ? cat.name : 'Без категории'}</span>` : '';
+        const phoneHtml = (showPhone && guest.phone) ? `<span class="text-[9px] text-stone-400 font-mono block">${escapeHtml(guest.phone)}</span>` : '';
         
         row.innerHTML = `
             <div class="min-w-0 flex-1 pr-2">
-                <span class="font-bold text-stone-950 block truncate">${guest.name}</span>
-                <span class="text-[9px] text-stone-400 font-semibold block truncate">${cat ? cat.name : 'Без категории'}</span>
+                <span class="font-bold text-stone-950 block truncate">${escapeHtml(guest.name)}</span>
+                ${catBadgeHtml}
+                ${phoneHtml}
             </div>
             
             <div class="flex items-center gap-1.5 shrink-0">

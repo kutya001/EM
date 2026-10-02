@@ -1,10 +1,41 @@
 // ===== UI.JS — Общие UI-компоненты и навигация =====
 
+function updateAppHeaderTitle() {
+    const el = document.getElementById('mobile-header-dynamic-title');
+    if (!el) return;
+
+    let title = 'EM';
+    if (currentTab === 'profile') {
+        const sub = currentMainSubTab === 'stats' ? 'Аналитика' : (currentMainSubTab === 'database' ? 'Данные' : 'Сведения');
+        title = `EM — Главная — ${sub}`;
+    } else if (currentTab === 'guests') {
+        let sub = 'Список';
+        const gm = (typeof guestsViewMode !== 'undefined') ? guestsViewMode : (typeof currentGuestsViewMode !== 'undefined' ? currentGuestsViewMode : 'list');
+        if (gm === 'spreadsheet') sub = 'Таблица';
+        else if (gm === 'tables') sub = 'Столы';
+        else if (gm === 'categories') sub = 'Категории';
+        title = `EM — Гости — ${sub}`;
+    } else if (currentTab === 'tables') {
+        title = `EM — Столы`;
+    } else if (currentTab === 'schema') {
+        title = `EM — Схема`;
+    } else if (currentTab === 'finance') {
+        let sub = 'Анализ';
+        if (typeof currentFinanceTab !== 'undefined') {
+            if (currentFinanceTab === 'expenses') sub = 'Расходы';
+            else if (currentFinanceTab === 'income') sub = 'Подарки';
+        }
+        title = `EM — Финансы — ${sub}`;
+    }
+    el.innerText = title;
+}
+
 // --- Навигация между вкладками ---
 function switchTab(tabId) {
     currentTab = tabId;
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-    document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+    const targetTab = document.getElementById(`tab-${tabId}`);
+    if (targetTab) targetTab.classList.remove('hidden');
 
     // Мобильные кнопки
     document.querySelectorAll('nav button').forEach(btn => {
@@ -17,21 +48,22 @@ function switchTab(tabId) {
         activeMobileBtn.classList.add('text-emerald-800');
     }
 
-    // Кнопки для ПК
+    // Кнопки для ПК (Вертикальный сайдбар)
     const pcTabs = ['profile', 'guests', 'tables', 'schema', 'finance'];
     pcTabs.forEach(t => {
         const btn = document.getElementById(`pc-btn-tab-${t}`);
         if (btn) {
-            btn.classList.remove('bg-stone-900/70', 'text-white');
-            btn.classList.add('text-stone-300');
+            btn.classList.remove('bg-stone-900/70', 'text-white', 'shadow-xs');
+            btn.classList.add('text-stone-300', 'hover:bg-emerald-900/60');
         }
     });
     const activePcBtn = document.getElementById(`pc-btn-tab-${tabId}`);
     if (activePcBtn) {
-        activePcBtn.classList.remove('text-stone-300');
-        activePcBtn.classList.add('bg-stone-900/70', 'text-white');
+        activePcBtn.classList.remove('text-stone-300', 'hover:bg-emerald-900/60');
+        activePcBtn.classList.add('bg-stone-900/70', 'text-white', 'shadow-xs');
     }
 
+    updateAppHeaderTitle();
     renderAll();
     lucide.createIcons();
 
@@ -78,8 +110,14 @@ function openModal(modalId) {
 }
 
 function closeModal(modalId) {
+    if (modalId === 'modal-print-guests' && typeof closeMobilePrintSettingsDrawer === 'function') {
+        closeMobilePrintSettingsDrawer();
+    }
     const modal = document.getElementById(modalId);
-    modal.firstElementChild.classList.add('scale-95', 'opacity-0');
+    if (!modal) return;
+    if (modal.firstElementChild) {
+        modal.firstElementChild.classList.add('scale-95', 'opacity-0');
+    }
     setTimeout(() => {
         modal.classList.add('hidden');
     }, 200);
@@ -167,6 +205,28 @@ function updateDropdowns() {
 // --- Отрисовка активных данных ---
 function renderAll() {
     updateDashboardStats();
+    
+    // Синхронизация видимости категорий с настройками мероприятия
+    const showCat = state.profile?.trackCategories !== false;
+    const catSubtab = document.getElementById('subtab-btn-categories');
+    if (catSubtab) {
+        if (!showCat) catSubtab.classList.add('hidden');
+        else catSubtab.classList.remove('hidden');
+    }
+    const catFilter = document.getElementById('filter-category');
+    if (catFilter) {
+        if (!showCat) catFilter.classList.add('hidden');
+        else catFilter.classList.remove('hidden');
+    }
+    const massCatBtn = document.querySelector('button[onclick="openMassCategoryModal()"]');
+    if (massCatBtn) {
+        if (!showCat) massCatBtn.classList.add('hidden');
+        else massCatBtn.classList.remove('hidden');
+    }
+    if (!showCat && typeof guestsViewMode !== 'undefined' && guestsViewMode === 'categories') {
+        guestsViewMode = 'list';
+    }
+
     if (currentTab === 'profile') {
         if (currentMainSubTab === 'stats') {
             renderAnalyticsTab();
@@ -185,9 +245,10 @@ function renderAll() {
         renderFinanceGuests();
         renderFinanceAnalysis();
     }
+    updateAppHeaderTitle();
 }
 
-// --- Статистика в шапке ---
+// --- Статистика в шапке и сайдбаре ---
 function updateDashboardStats() {
     const total = state.guests.length;
     const seated = state.guests.filter(g => g.tableId && g.tableId !== 'none').length;
@@ -195,15 +256,38 @@ function updateDashboardStats() {
     const percent = total > 0 ? Math.round((seated / total) * 100) : 0;
 
     // Мобильная шапка
-    document.getElementById('header-seated-count').innerText = `${seated}/${total}`;
-    // ПК шапка
+    const mobCount = document.getElementById('header-seated-count');
+    if (mobCount) mobCount.innerText = `${seated}/${total}`;
+
+    // ПК сайдбар
     const pcSeated = document.getElementById('pc-header-seated-count');
     if (pcSeated) pcSeated.innerText = `${seated}/${total}`;
 
-    document.getElementById('stats-seated').innerText = seated;
-    document.getElementById('stats-unseated').innerText = unseated;
-    document.getElementById('stats-percent').innerText = `${percent}%`;
-    document.getElementById('stats-progress-bar').style.width = `${percent}%`;
+    const pcBar = document.getElementById('pc-sidebar-seated-bar');
+    if (pcBar) pcBar.style.width = `${percent}%`;
+
+    const pcPercent = document.getElementById('pc-sidebar-seated-percent');
+    if (pcPercent) pcPercent.innerText = `${percent}%`;
+
+    const pcGuestsBadge = document.getElementById('pc-nav-guests-badge');
+    if (pcGuestsBadge) pcGuestsBadge.innerText = total;
+
+    const pcTablesBadge = document.getElementById('pc-nav-tables-badge');
+    if (pcTablesBadge) pcTablesBadge.innerText = state.tables.length;
+
+    const pcEventTitle = document.getElementById('pc-sidebar-event-title');
+    if (pcEventTitle && state.profile?.eventName) {
+        pcEventTitle.innerText = state.profile.eventName;
+    }
+
+    const sSeated = document.getElementById('stats-seated');
+    if (sSeated) sSeated.innerText = seated;
+    const sUnseated = document.getElementById('stats-unseated');
+    if (sUnseated) sUnseated.innerText = unseated;
+    const sPercent = document.getElementById('stats-percent');
+    if (sPercent) sPercent.innerText = `${percent}%`;
+    const sBar = document.getElementById('stats-progress-bar');
+    if (sBar) sBar.style.width = `${percent}%`;
 }
 
 // --- Canvas-утилита скруглённый прямоугольник ---

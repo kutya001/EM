@@ -517,3 +517,142 @@ function drawCanvas() {
     drawCanvasTooltip();
     ctx.restore();
 }
+
+function getCanvasPrintImage() {
+    if (!canvas) {
+        initCanvas();
+    }
+    if (!canvas || !ctx) return null;
+
+    // Вычисляем границы всех столов
+    let minX = 150, maxX = 650, minY = 10, maxY = 500;
+    if (state.tables && state.tables.length > 0) {
+        minX = Math.min(...state.tables.map(t => t.x - 90), 200);
+        maxX = Math.max(...state.tables.map(t => t.x + 90), 600);
+        minY = Math.min(...state.tables.map(t => t.y - 90), 10);
+        maxY = Math.max(...state.tables.map(t => t.y + 90), 450);
+    }
+
+    const contentWidth = Math.max(450, maxX - minX + 80);
+    const contentHeight = Math.max(320, maxY - minY + 80);
+
+    // Создаем отдельный Canvas повышенной четкости для печати А4 (1600px)
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = 1600;
+    offCanvas.height = Math.round(1600 * (contentHeight / contentWidth));
+    const offCtx = offCanvas.getContext('2d');
+    if (!offCtx) return null;
+
+    // Фоновая заливка
+    offCtx.fillStyle = '#fafaf9';
+    offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+
+    const scale = (offCanvas.width - 80) / contentWidth;
+    offCtx.save();
+    offCtx.translate(40 - minX * scale, 40 - minY * scale);
+    offCtx.scale(scale, scale);
+
+    // Легкая координатная сетка
+    offCtx.strokeStyle = 'rgba(120, 113, 108, 0.08)';
+    offCtx.lineWidth = 1 / scale;
+    for (let x = minX - 100; x < maxX + 100; x += 30) {
+        offCtx.beginPath(); offCtx.moveTo(x, minY - 100); offCtx.lineTo(x, maxY + 100); offCtx.stroke();
+    }
+    for (let y = minY - 100; y < maxY + 100; y += 30) {
+        offCtx.beginPath(); offCtx.moveTo(minX - 100, y); offCtx.lineTo(maxX + 100, y); offCtx.stroke();
+    }
+
+    // Президиум (Сцена)
+    offCtx.fillStyle = '#fef3c7'; offCtx.strokeStyle = '#f59e0b'; offCtx.lineWidth = 2.5;
+    drawRoundedRectCtx(offCtx, 400 - 130, 20, 260, 44, 12, true, true);
+    offCtx.fillStyle = '#78350f'; offCtx.font = 'bold 13px Inter, sans-serif'; offCtx.textAlign = 'center'; offCtx.textBaseline = 'middle';
+    offCtx.fillText('⭐ ПРЕЗИДИУМ (СЦЕНА)', 400, 42);
+
+    // Отрисовка всех столов и стульев
+    state.tables.forEach(table => {
+        const tableGuests = state.guests.filter(g => g.tableId === table.id);
+        const occupiedCount = tableGuests.length;
+        const tableRadius = 48;
+        const chairOffset = 22;
+
+        for (let i = 0; i < table.capacity; i++) {
+            const angle = (i * 2 * Math.PI) / table.capacity - Math.PI / 2;
+            const seatX = table.x + (tableRadius + chairOffset) * Math.cos(angle);
+            const seatY = table.y + (tableRadius + chairOffset) * Math.sin(angle);
+            const guestOnSeat = tableGuests.find(g => g.seatIndex === i);
+
+            offCtx.beginPath();
+            offCtx.arc(seatX, seatY, 11, 0, 2 * Math.PI);
+            if (guestOnSeat) {
+                offCtx.fillStyle = '#064e3b';
+                offCtx.strokeStyle = '#fbbf24';
+                offCtx.lineWidth = 2;
+                offCtx.fill();
+                offCtx.stroke();
+                const initials = getInitials(guestOnSeat.name);
+                offCtx.fillStyle = '#ffffff';
+                offCtx.font = 'bold 8.5px Inter, sans-serif';
+                offCtx.textAlign = 'center';
+                offCtx.textBaseline = 'middle';
+                offCtx.fillText(initials, seatX, seatY);
+            } else {
+                offCtx.fillStyle = '#ffffff';
+                offCtx.strokeStyle = '#cbd5e1';
+                offCtx.lineWidth = 1.5;
+                offCtx.fill();
+                offCtx.stroke();
+                offCtx.fillStyle = '#94a3b8';
+                offCtx.font = 'bold 8px Inter, sans-serif';
+                offCtx.textAlign = 'center';
+                offCtx.textBaseline = 'middle';
+                offCtx.fillText(String(i + 1), seatX, seatY);
+            }
+        }
+
+        // Стол
+        offCtx.beginPath();
+        offCtx.arc(table.x, table.y, tableRadius, 0, 2 * Math.PI);
+        const cat = state.categories.find(c => c.id === table.categoryId);
+        offCtx.fillStyle = cat ? (cat.color ? cat.color + '22' : '#ecfdf5') : '#f8fafc';
+        offCtx.strokeStyle = (occupiedCount >= table.capacity) ? '#dc2626' : (cat ? (cat.color || '#059669') : '#059669');
+        offCtx.lineWidth = (occupiedCount >= table.capacity) ? 3 : 2;
+        offCtx.fill();
+        offCtx.stroke();
+
+        // Надписи стола
+        offCtx.fillStyle = '#0f172a';
+        offCtx.font = 'bold 12.5px Inter, sans-serif';
+        offCtx.textAlign = 'center';
+        offCtx.textBaseline = 'middle';
+        offCtx.fillText(`Стол ${table.number}`, table.x, table.y - (table.name ? 10 : 6));
+
+        if (table.name) {
+            offCtx.fillStyle = '#475569';
+            offCtx.font = '9.5px Inter, sans-serif';
+            offCtx.fillText(table.name, table.x, table.y + 4);
+        }
+
+        offCtx.fillStyle = (occupiedCount >= table.capacity) ? '#dc2626' : '#047857';
+        offCtx.font = 'bold 10.5px Inter, sans-serif';
+        offCtx.fillText(`${occupiedCount} / ${table.capacity}`, table.x, table.y + (table.name ? 18 : 10));
+    });
+
+    offCtx.restore();
+    return offCanvas.toDataURL('image/png');
+}
+
+function drawRoundedRectCtx(c, x, y, width, height, radius, fill, stroke) {
+    c.beginPath();
+    c.moveTo(x + radius, y);
+    c.lineTo(x + width - radius, y);
+    c.quadraticCurveTo(x + width, y, x + width, y + radius);
+    c.lineTo(x + width, y + height - radius);
+    c.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    c.lineTo(x + radius, y + height);
+    c.quadraticCurveTo(x, y + height, x, y + height - radius);
+    c.lineTo(x, y + radius);
+    c.quadraticCurveTo(x, y, x + radius, y);
+    c.closePath();
+    if (fill) c.fill();
+    if (stroke) c.stroke();
+}

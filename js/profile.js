@@ -128,7 +128,81 @@ function renderProfileView() {
     document.getElementById('profile-view-planned-guests').innerText = plannedGuests;
     document.getElementById('profile-view-seated-stats').innerText = `Рассажено: ${seatedGuests} из ${totalGuests} гостей (${totalGuests > 0 ? Math.round((seatedGuests/totalGuests)*100) : 0}%)`;
     
+    // Обновляем визуальное состояние быстрых тумблеров учета
+    const catBtn = document.getElementById('profile-view-toggle-cat');
+    const catDot = document.getElementById('profile-view-cat-dot');
+    if (catBtn && catDot) {
+        const on = p.trackCategories !== false;
+        catDot.className = `w-2 h-2 rounded-full ${on ? 'bg-emerald-500' : 'bg-stone-300'}`;
+        catBtn.className = `px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition flex items-center gap-1.5 shadow-2xs active:scale-95 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-stone-100 border-stone-250 text-stone-400'}`;
+    }
+
+    const phoneBtn = document.getElementById('profile-view-toggle-phone');
+    const phoneDot = document.getElementById('profile-view-phone-dot');
+    if (phoneBtn && phoneDot) {
+        const on = p.trackPhones !== false;
+        phoneDot.className = `w-2 h-2 rounded-full ${on ? 'bg-emerald-500' : 'bg-stone-300'}`;
+        phoneBtn.className = `px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition flex items-center gap-1.5 shadow-2xs active:scale-95 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-stone-100 border-stone-250 text-stone-400'}`;
+    }
+
+    const finBtn = document.getElementById('profile-view-toggle-fin');
+    const finDot = document.getElementById('profile-view-fin-dot');
+    if (finBtn && finDot) {
+        const on = p.useFinance !== false;
+        finDot.className = `w-2 h-2 rounded-full ${on ? 'bg-emerald-500' : 'bg-stone-300'}`;
+        finBtn.className = `px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition flex items-center gap-1.5 shadow-2xs active:scale-95 ${on ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-stone-100 border-stone-250 text-stone-400'}`;
+    }
+
+    renderProfileCategoriesCard();
+    renderMainInvitationCard();
     lucide.createIcons();
+}
+
+function renderProfileCategoriesCard() {
+    const container = document.getElementById('profile-categories-chips-container');
+    const statusText = document.getElementById('profile-categories-status-text');
+    if (!container) return;
+
+    const p = state.profile || {};
+    const isCatsActive = p.trackCategories !== false;
+    container.innerHTML = '';
+
+    if (!isCatsActive) {
+        if (statusText) statusText.innerText = "Учет категорий отключен в настройках";
+        container.innerHTML = `
+            <div class="w-full bg-stone-100 border border-stone-250 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span class="text-stone-500 font-medium">⚠️ Категории гостей отключены. В списке гостей и рассадке группы не отображаются.</span>
+                <button type="button" onclick="quickToggleTrackCategories()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-2xs transition">
+                    Включить категории
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    if (statusText) statusText.innerText = `Активных категорий: ${state.categories.length}`;
+    if (!state.categories || state.categories.length === 0) {
+        container.innerHTML = `
+            <div class="text-stone-400 text-xs italic py-1">
+                Категории еще не созданы. Нажмите «Управление категориями», чтобы добавить группы.
+            </div>
+        `;
+        return;
+    }
+
+    state.categories.forEach(cat => {
+        const count = state.guests.filter(g => g.categoryId === cat.id).length;
+        const chip = document.createElement('div');
+        chip.className = "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200/80 text-xs font-semibold text-stone-800 transition cursor-pointer select-none";
+        chip.onclick = () => openModal('modal-view-categories');
+        chip.title = "Нажмите для редактирования категории";
+        chip.innerHTML = `
+            <span class="w-2 h-2 rounded-full" style="background-color: ${cat.color || '#059669'}"></span>
+            <span>${escapeHtml(cat.name)}</span>
+            <span class="text-[10px] font-bold bg-white text-stone-600 px-1.5 py-0.2 rounded-md border border-stone-200">${count}</span>
+        `;
+        container.appendChild(chip);
+    });
 }
 
 function initProfileUI() {
@@ -318,4 +392,290 @@ function toggleProfileFinanceFields(checked) {
         else container.classList.add('hidden');
     }
 }
+
+// --- Главная: Праздничный пригласительный билет торжества ---
+function renderMainInvitationCard() {
+    const container = document.getElementById('main-invitation-card-container');
+    if (!container) return;
+
+    const p = state.profile || {};
+    const tKey = (typeof getDefaultInvitationTemplateKey === 'function') ? getDefaultInvitationTemplateKey() : 'general';
+    const defaultText = (typeof invitationTemplates !== 'undefined' && invitationTemplates[tKey]) ? invitationTemplates[tKey] : (invitationTemplates?.general || '');
+    
+    if (!p.invitationText || !p.invitationText.trim()) {
+        p.invitationText = defaultText;
+    }
+
+    if (typeof printCustomInvitationText !== 'undefined' && !printCustomInvitationText) {
+        printCustomInvitationText = p.invitationText;
+    }
+
+    const textarea = document.getElementById('main-invitation-text-input');
+    if (textarea && document.activeElement !== textarea) {
+        textarea.value = p.invitationText;
+    }
+
+    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+    const eventType = p.eventType || 'Торжество';
+    const dateText = p.date ? formatDate(p.date) : 'Дата уточняется';
+    
+    let timeText = '18:00';
+    if (p.timeStart) {
+        timeText = p.timeStart + (p.timeEnd ? ` – ${p.timeEnd}` : '');
+    }
+    
+    const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : 'Место проведения уточняется';
+
+    container.innerHTML = `
+        <div class="invitation-border-luxury rounded-2xl md:rounded-3xl shadow-md text-center relative overflow-hidden bg-[#fffdfa] p-4 md:p-6 transition-all duration-300 hover:shadow-lg">
+            <!-- Угловые золоченые элементы -->
+            <div class="invitation-corner invitation-corner-tl"></div>
+            <div class="invitation-corner invitation-corner-tr"></div>
+            <div class="invitation-corner invitation-corner-bl"></div>
+            <div class="invitation-corner invitation-corner-br"></div>
+
+            <div class="invitation-border-inner rounded-xl md:rounded-2xl p-3 md:p-5 space-y-3 md:space-y-4">
+                <!-- Заголовок и эмблема -->
+                <div class="space-y-1">
+                    <span class="text-[9px] md:text-[10px] uppercase tracking-[0.25em] text-amber-800 font-extrabold inline-block bg-amber-100/70 border border-amber-300/80 px-2.5 py-0.5 rounded-full">
+                        ❖ ПРИГЛАСИТЕЛЬНЫЙ БИЛЕТ ❖
+                    </span>
+                    <h3 class="serif-title font-bold text-amber-950 text-lg md:text-2xl leading-tight pt-1">
+                        ${escapeHtml(eventTitle)}
+                    </h3>
+                    <div class="flex items-center justify-center gap-2 pt-0.5">
+                        <span class="h-px w-8 bg-amber-500/50"></span>
+                        <span class="text-xs text-amber-700">✦</span>
+                        <span class="text-[11px] font-bold text-emerald-900">${escapeHtml(eventType)}</span>
+                        <span class="text-xs text-amber-700">✦</span>
+                        <span class="h-px w-8 bg-amber-500/50"></span>
+                    </div>
+                </div>
+
+                <!-- Обращение -->
+                <div class="serif-title font-bold text-amber-950 text-sm md:text-base">
+                    Дорогие друзья, родные и близкие!
+                </div>
+
+                <!-- Текст приглашения -->
+                <p class="text-stone-700 leading-relaxed italic px-2 md:px-4 font-serif text-xs md:text-sm whitespace-pre-line text-center">
+                    ${escapeHtml(p.invitationText)}
+                </p>
+
+                <!-- Информационный блок события -->
+                <div class="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-3 md:p-4 text-stone-850 space-y-2 text-left text-xs md:text-sm font-medium shadow-2xs">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base w-5 text-center shrink-0">📅</span>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-stone-400 block leading-tight">Дата торжества</span>
+                            <span class="font-bold text-stone-900">${escapeHtml(dateText)}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base w-5 text-center shrink-0">🕒</span>
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-stone-400 block leading-tight">Время сбора</span>
+                            <span class="font-bold text-stone-900">${escapeHtml(timeText)}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-base w-5 text-center shrink-0">📍</span>
+                        <div class="min-w-0 flex-1">
+                            <span class="text-[10px] uppercase font-bold text-stone-400 block leading-tight">Место проведения</span>
+                            <span class="font-bold text-stone-900 block truncate">${escapeHtml(venueText)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Подпись и пожелание -->
+                <div class="pt-1 text-center space-y-0.5">
+                    <p class="italic serif-title text-xs md:text-sm text-stone-700">Будем искренне рады видеть вас на нашем празднике!</p>
+                    <span class="text-[9px] uppercase tracking-wider text-amber-800 font-bold block">С любовью и уважением</span>
+                </div>
+            </div>
+        </div>
+    `;
+    lucide.createIcons();
+}
+
+function toggleMainInvitationSettings() {
+    const drawer = document.getElementById('main-invitation-settings-drawer');
+    if (!drawer) return;
+    const isHidden = drawer.classList.contains('hidden');
+    if (isHidden) {
+        drawer.classList.remove('hidden');
+        const textarea = document.getElementById('main-invitation-text-input');
+        if (textarea) {
+            textarea.focus();
+        }
+    } else {
+        drawer.classList.add('hidden');
+    }
+}
+
+function setMainInvitationPreset(templateKey) {
+    if (typeof invitationTemplates !== 'undefined' && invitationTemplates[templateKey]) {
+        const text = invitationTemplates[templateKey];
+        if (state.profile) {
+            state.profile.invitationText = text;
+            saveState();
+        }
+        if (typeof printCustomInvitationText !== 'undefined') {
+            printCustomInvitationText = text;
+        }
+        const textarea = document.getElementById('main-invitation-text-input');
+        if (textarea) textarea.value = text;
+        const printTextarea = document.getElementById('print-invitation-text');
+        if (printTextarea) printTextarea.value = text;
+        const printTemplateSelect = document.getElementById('print-invitation-template-select');
+        if (printTemplateSelect) printTemplateSelect.value = templateKey;
+
+        renderMainInvitationCard();
+        if (typeof updatePrintPreview === 'function') {
+            updatePrintPreview();
+        }
+        showToast('Текст шаблона успешно применен!');
+    }
+}
+
+function handleMainInvitationTextChange(event) {
+    const text = event.target.value;
+    if (state.profile) {
+        state.profile.invitationText = text;
+        saveState();
+    }
+    if (typeof printCustomInvitationText !== 'undefined') {
+        printCustomInvitationText = text;
+    }
+    const printTextarea = document.getElementById('print-invitation-text');
+    if (printTextarea) printTextarea.value = text;
+
+    renderMainInvitationCard();
+    if (typeof updatePrintPreview === 'function') {
+        updatePrintPreview();
+    }
+}
+
+function copyMainInvitationText() {
+    const p = state.profile || {};
+    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+    const dateText = p.date ? formatDate(p.date) : '';
+    const timeText = p.timeStart ? `${p.timeStart}${p.timeEnd ? ` – ${p.timeEnd}` : ''}` : '';
+    const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : '';
+    const text = p.invitationText || (typeof invitationTemplates !== 'undefined' ? invitationTemplates.general : '');
+
+    let message = `✨ *${eventTitle}* ✨\n\n`;
+    message += `${text}\n\n`;
+    if (dateText) message += `📅 *Дата:* ${dateText}\n`;
+    if (timeText) message += `🕒 *Время сбора:* ${timeText}\n`;
+    if (venueText) message += `📍 *Место проведения:* ${venueText}\n`;
+    if (p.venueLink && p.venueLink.trim()) message += `🗺️ *Карта / 2ГИС:* ${p.venueLink.trim()}\n`;
+    message += `\nЖдём вас с радостью и теплом! ✨`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(message).then(() => {
+            showToast('Текст приглашения скопирован в буфер обмена!');
+        }).catch(() => {
+            fallbackCopyText(message);
+        });
+    } else {
+        fallbackCopyText(message);
+    }
+}
+
+function fallbackCopyText(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+        document.execCommand('copy');
+        showToast('Текст приглашения скопирован!');
+    } catch (e) {
+        showToast('Не удалось скопировать текст');
+    }
+    document.body.removeChild(ta);
+}
+
+function quickToggleTrackCategories() {
+    if (!state.profile) state.profile = {};
+    state.profile.trackCategories = !(state.profile.trackCategories !== false);
+    saveState();
+    if (state.profile.trackCategories === false && typeof guestsViewMode !== 'undefined' && guestsViewMode === 'categories') {
+        if (typeof switchGuestsViewMode === 'function') switchGuestsViewMode('list');
+    }
+    renderAll();
+    showToast(state.profile.trackCategories ? 'Учет категорий гостей включен' : 'Учет категорий гостей отключен');
+}
+
+function quickToggleTrackPhones() {
+    if (!state.profile) state.profile = {};
+    state.profile.trackPhones = !(state.profile.trackPhones !== false);
+    saveState();
+    renderAll();
+    showToast(state.profile.trackPhones ? 'Учет телефонов гостей включен' : 'Учет телефонов гостей отключен');
+}
+
+function quickToggleUseFinance() {
+    if (!state.profile) state.profile = {};
+    state.profile.useFinance = !(state.profile.useFinance !== false);
+    saveState();
+    renderAll();
+    showToast(state.profile.useFinance ? 'Раздел финансов включен' : 'Раздел финансов скрыт');
+}
+
+function sendWhatsAppGeneralInvitation() {
+    const p = state.profile || {};
+    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+    const dateText = p.date ? formatDate(p.date) : '';
+    const timeText = p.timeStart ? `${p.timeStart}${p.timeEnd ? ` – ${p.timeEnd}` : ''}` : '';
+    const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : '';
+    const text = p.invitationText || (typeof invitationTemplates !== 'undefined' ? invitationTemplates.general : '');
+
+    let msg = `✨ *${eventTitle}* ✨\n\n`;
+    msg += `Дорогие друзья, родные и близкие!\n\n`;
+    msg += `${text}\n\n`;
+    if (dateText) msg += `📅 *Дата:* ${dateText}\n`;
+    if (timeText) msg += `🕒 *Время сбора:* ${timeText}\n`;
+    if (venueText) msg += `📍 *Место проведения:* ${venueText}\n`;
+    if (p.venueLink && p.venueLink.trim()) msg += `🗺️ *Карта / 2ГИС:* ${p.venueLink.trim()}\n`;
+    msg += `\nБудем счастливы видеть Вас на нашем празднике! ✨`;
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+}
+
+function sendWhatsAppGeneralInvitationPDF() {
+    // Открываем модальное окно печати общего бланка (А4)
+    if (typeof openPrintModal === 'function') {
+        openPrintModal('invitation_general');
+    }
+
+    const p = state.profile || {};
+    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+    const dateText = p.date ? formatDate(p.date) : '';
+    const timeText = p.timeStart ? `${p.timeStart}${p.timeEnd ? ` – ${p.timeEnd}` : ''}` : '';
+    const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : '';
+    const text = p.invitationText || (typeof invitationTemplates !== 'undefined' ? invitationTemplates.general : '');
+
+    let msg = `✨ *ПРИГЛАШЕНИЕ НА ТОРЖЕСТВО: ${eventTitle}* ✨\n\n`;
+    msg += `Дорогие друзья, родные и близкие!\n\n`;
+    msg += `${text}\n\n`;
+    if (dateText) msg += `📅 *Дата:* ${dateText}\n`;
+    if (timeText) msg += `🕒 *Время:* ${timeText}\n`;
+    if (venueText) msg += `📍 *Место:* ${venueText}\n`;
+    if (p.venueLink && p.venueLink.trim()) msg += `🗺️ *Карта 2ГИС:* ${p.venueLink.trim()}\n`;
+    msg += `\n📄 _Во вложении отправляю пригласительный билет (PDF)! Ждём вас!_ ✨`;
+
+    showToast('Открыт бланк А4 для PDF. Нажмите «Распечатать / Сохранить в PDF»');
+
+    setTimeout(() => {
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+    }, 600);
+}
+
 

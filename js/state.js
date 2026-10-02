@@ -29,6 +29,22 @@ const defaultGuests = [
     { id: "gst-7", name: "Даниярова Чолпон", phone: "", giftAmount: 3000, categoryId: "cat-4", tableId: "none", seatIndex: -1 }
 ];
 
+const invitationTemplates = {
+    wedding: "С огромной радостью и трепетом в сердце приглашаем вас разделить с нами самый счастливый и незабываемый день нашей жизни — день нашего бракосочетания!\n\nВаше присутствие, тёплые слова и улыбки станут для нас самым бесценным подарком. Будем счастливы видеть вас среди наших самых дорогих и близких гостей!",
+    kyz_uzatuu: "Уважаемые и дорогие наши гости!\n\nПриглашаем вас на торжественный вечер проводов невесты (Кыз узатуу). Будем искренне рады разделить с вами этот светлый, радостный и благословенный семейный праздник в кругу самых близких людей!",
+    birthday: "Дорогие друзья, родные и близкие!\n\nПриглашаю вас разделить со мной радость торжества и юбилея! В этот особенный день мне будет невероятно приятно собрать всех близких людей за одним праздничным столом и провести этот незабываемый вечер вместе.",
+    general: "Дорогие друзья, родные и близкие!\n\nС большой радостью приглашаем вас на наше праздничное семейное торжество! Будем счастливы разделить эти неповторимые мгновения радости, счастья и веселья вместе с вами!",
+    short: "Приглашаем вас разделить с нами радость этого праздничного дня! Ждём вас с нетерпением и радостью!"
+};
+
+function getDefaultInvitationTemplateKey() {
+    const et = (state?.profile?.eventType || '').toLowerCase();
+    if (et.includes('свадьб')) return 'wedding';
+    if (et.includes('кыз') || et.includes('бешик')) return 'kyz_uzatuu';
+    if (et.includes('рожден') || et.includes('юбилей')) return 'birthday';
+    return 'general';
+}
+
 const defaultProfile = {
     eventName: "",
     date: "",
@@ -44,7 +60,8 @@ const defaultProfile = {
     venueLink: "",
     useFinance: true,
     trackPhones: true,
-    trackCategories: true
+    trackCategories: true,
+    invitationText: ""
 };
 
 const defaultExpenses = [
@@ -182,7 +199,8 @@ function clearAllData() {
         venueLink: "",
         useFinance: true,
         trackPhones: true,
-        trackCategories: true
+        trackCategories: true,
+        invitationText: ""
     };
     state.finance = {
         expenseCategories: ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],

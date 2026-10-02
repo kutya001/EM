@@ -54,6 +54,9 @@ function initApp() {
     if (state.profile.trackCategories === undefined) {
         state.profile.trackCategories = true;
     }
+    if (state.profile.invitationText === undefined) {
+        state.profile.invitationText = "";
+    }
     if (!state.profile.eventTypes) {
         state.profile.eventTypes = ["Свадьба", "Кыз узатуу", "Бешик той", "День рождения", "Юбилей", "Прочее"];
     } else if (!state.profile.eventTypes.includes("Прочее")) {

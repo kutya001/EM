@@ -18,63 +18,135 @@
     
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-zinc-100 text-stone-850 flex flex-col min-h-screen pb-28 select-none">
+<body class="bg-zinc-100 text-stone-850 min-h-screen select-none">
 
-    <!-- ХЕДЕР С АДАПТИВНЫМ МЕНЮ ДЛЯ ПК (ОСТРОВОК) -->
-    <header class="glass-panel-dark text-amber-50 island-card mx-2 md:mx-4 mt-2 mb-3.5 sticky top-1 z-30 px-3.5 py-1.5 flex flex-col md:flex-row items-center justify-between gap-1.5 border border-emerald-900/40">
-        <div class="flex items-center justify-between w-full md:w-auto gap-3">
-            <div>
-                <span class="text-[8px] uppercase tracking-widest text-emerald-300 font-bold block leading-none mb-0.5" id="header-subtitle">Система планирования мероприятий</span>
-                <h1 class="text-sm md:text-base font-bold serif-title tracking-wide flex items-center gap-1.5 leading-tight">
-                    <i data-lucide="gem" class="w-4 h-4 text-amber-400"></i>
-                    Event Management (EM)
-                </h1>
-            </div>
-            <!-- Мобильный индикатор -->
-            <div class="text-right md:hidden flex items-center gap-2">
-                <button type="button" onclick="openModal('modal-help')" class="bg-emerald-900/60 text-amber-300 hover:text-white p-1.5 rounded-lg border border-emerald-800/40 active:scale-95 transition" title="Инструкция">
-                    <i data-lucide="help-circle" class="w-4 h-4"></i>
-                </button>
-                <div class="text-right leading-none">
-                    <span class="text-sm font-bold text-amber-400" id="header-seated-count">0/0</span>
-                    <span class="text-[8px] text-emerald-300 block uppercase tracking-wider font-semibold">рассажено</span>
+    <!-- ГЛАВНЫЙ АДАПТИВНЫЙ ЛЕЙАУТ: НА ПК — ЛЕВАЯ ПАНЕЛЬ + КОНТЕНТ СПРАВА, НА МОБИЛЬНЫХ — ХЕДЕР И БОТТОМ-НАВ -->
+    <div class="min-h-screen flex flex-col md:flex-row">
+
+        <!-- ЛЕВАЯ ВЕРТИКАЛЬНАЯ ПАНЕЛЬ ДЛЯ ПК (MD+) -->
+        <aside class="hidden md:flex flex-col md:w-64 lg:w-72 bg-emerald-950 text-white shrink-0 border-r border-emerald-900/60 sticky top-0 h-screen select-none z-30 shadow-xl overflow-y-auto p-4 justify-between">
+            <div class="space-y-4">
+                <!-- Логотип и Название приложения -->
+                <div class="border-b border-emerald-900/70 pb-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="bg-emerald-900/90 p-2 rounded-xl text-amber-400 border border-emerald-800/80 shadow-inner">
+                            <i data-lucide="gem" class="w-5 h-5"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h1 class="text-sm font-bold serif-title tracking-wide text-white leading-tight">
+                                Event Management
+                            </h1>
+                            <span class="text-[9px] uppercase tracking-widest text-emerald-300 font-bold block" id="pc-sidebar-subtitle">Система торжеств • EM Pro</span>
+                        </div>
+                    </div>
+                    <div id="pc-sidebar-event-title" class="text-xs text-amber-200/90 font-medium truncate mt-2 bg-emerald-900/40 px-2.5 py-1 rounded-lg border border-emerald-800/50">
+                        Мое мероприятие
+                    </div>
                 </div>
+
+                <!-- Виджет рассадки гостей на ПК -->
+                <div class="bg-emerald-900/50 border border-emerald-800/60 rounded-2xl p-3 shadow-inner space-y-1.5">
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span class="text-stone-300">Рассадка гостей:</span>
+                        <span id="pc-header-seated-count" class="text-amber-400 font-extrabold text-sm">0/0</span>
+                    </div>
+                    <div class="w-full bg-emerald-950/80 h-2 rounded-full overflow-hidden border border-emerald-900">
+                        <div id="pc-sidebar-seated-bar" class="bg-amber-400 h-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-[9px] text-emerald-300/80 font-semibold">
+                        <span>Гостей в зале</span>
+                        <span id="pc-sidebar-seated-percent">0%</span>
+                    </div>
+                </div>
+
+                <!-- Вертикальное навигационное меню ПК -->
+                <nav class="space-y-1">
+                    <button type="button" onclick="switchTab('profile')" id="pc-btn-tab-profile"
+                            class="w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-between group bg-stone-900/70 text-white shadow-xs">
+                        <span class="flex items-center gap-2.5">
+                            <i data-lucide="home" class="w-4 h-4 text-amber-400 group-hover:scale-110 transition"></i>
+                            <span>Главная</span>
+                        </span>
+                    </button>
+
+                    <button type="button" onclick="switchTab('guests')" id="pc-btn-tab-guests"
+                            class="w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-between group text-stone-300 hover:text-white hover:bg-emerald-900/60">
+                        <span class="flex items-center gap-2.5">
+                            <i data-lucide="users" class="w-4 h-4 text-emerald-300 group-hover:scale-110 transition"></i>
+                            <span>Гости</span>
+                        </span>
+                        <span id="pc-nav-guests-badge" class="text-[10px] font-bold bg-emerald-900/80 text-amber-300 px-2 py-0.5 rounded-full border border-emerald-800">0</span>
+                    </button>
+
+                    <button type="button" onclick="switchTab('tables')" id="pc-btn-tab-tables"
+                            class="w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-between group text-stone-300 hover:text-white hover:bg-emerald-900/60">
+                        <span class="flex items-center gap-2.5">
+                            <i data-lucide="armchair" class="w-4 h-4 text-emerald-300 group-hover:scale-110 transition"></i>
+                            <span>Столы</span>
+                        </span>
+                        <span id="pc-nav-tables-badge" class="text-[10px] font-bold bg-emerald-900/80 text-amber-300 px-2 py-0.5 rounded-full border border-emerald-800">0</span>
+                    </button>
+
+                    <button type="button" onclick="switchTab('schema')" id="pc-btn-tab-schema"
+                            class="w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-between group text-stone-300 hover:text-white hover:bg-emerald-900/60">
+                        <span class="flex items-center gap-2.5">
+                            <i data-lucide="map" class="w-4 h-4 text-emerald-300 group-hover:scale-110 transition"></i>
+                            <span>Схема зала</span>
+                        </span>
+                    </button>
+
+                    <button type="button" onclick="switchTab('finance')" id="pc-btn-tab-finance"
+                            class="w-full py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-between group text-stone-300 hover:text-white hover:bg-emerald-900/60">
+                        <span class="flex items-center gap-2.5">
+                            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-300 group-hover:scale-110 transition"></i>
+                            <span>Финансы</span>
+                        </span>
+                    </button>
+                </nav>
             </div>
-        </div>
 
-        <!-- Верхнее меню для ПК -->
-        <div class="hidden md:flex items-center gap-0.5 bg-stone-900/40 p-0.5 rounded-lg border border-emerald-900/50 flex-wrap">
-            <button onclick="switchTab('profile')" id="pc-btn-tab-profile" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
-                <i data-lucide="home" class="w-3.5 h-3.5"></i> Главная
-            </button>
-            <button onclick="switchTab('guests')" id="pc-btn-tab-guests" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
-                <i data-lucide="users" class="w-3.5 h-3.5"></i> Гости
-            </button>
-            <button onclick="switchTab('tables')" id="pc-btn-tab-tables" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
-                <i data-lucide="armchair" class="w-3.5 h-3.5"></i> Столы
-            </button>
-            <button onclick="switchTab('schema')" id="pc-btn-tab-schema" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
-                <i data-lucide="map" class="w-3.5 h-3.5"></i> Схема зала
-            </button>
-            <button onclick="switchTab('finance')" id="pc-btn-tab-finance" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
-                <i data-lucide="dollar-sign" class="w-3.5 h-3.5"></i> Финансы
-            </button>
-        </div>
-
-        <!-- Счётчик для ПК -->
-        <div class="hidden md:flex items-center gap-3">
-            <button type="button" onclick="openModal('modal-help')" class="bg-emerald-900/60 hover:bg-emerald-900 text-amber-200 border border-emerald-800/60 text-[11px] font-bold py-1.5 px-2.5 rounded-lg flex items-center gap-1 transition active:scale-95">
-                <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-400"></i> Инструкция
-            </button>
-            <div class="text-right border-l border-emerald-900/80 pl-3 leading-none">
-                <span class="text-sm font-extrabold text-amber-400" id="pc-header-seated-count">0/0</span>
-                <span class="text-[8px] text-emerald-300 block uppercase tracking-wider font-bold">рассажено гостей</span>
+            <!-- Нижний блок сайдбара ПК -->
+            <div class="pt-3 border-t border-emerald-900/70 space-y-2">
+                <button type="button" onclick="openPrintModal()" class="w-full bg-amber-400 hover:bg-amber-300 active:scale-95 text-stone-950 text-xs font-bold py-2.5 px-3 rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Центр печати (А4)</span>
+                </button>
+                <button type="button" onclick="openModal('modal-help')" class="w-full bg-emerald-900/60 hover:bg-emerald-900 text-amber-200 border border-emerald-800/60 text-xs font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition">
+                    <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span>Инструкция</span>
+                </button>
+                <span class="text-[9px] text-emerald-400/60 text-center block pt-1 font-mono">EM Pro v3 • 2026</span>
             </div>
-        </div>
-    </header>
+        </aside>
 
-    <!-- ГЛАВНЫЙ КОНТЕНТ -->
-    <main class="flex-1 max-w-md md:max-w-6xl w-full mx-auto px-2 md:px-4 pt-1.5 pb-28 md:py-2 space-y-4 animate-fadeIn">
+        <!-- ПРАВАЯ ОБЛАСТЬ: ШАПКА ДЛЯ ТЕЛЕФОНА + КОНТЕНТ -->
+        <div class="flex-1 min-w-0 flex flex-col">
+
+            <!-- КОМПАКТНЫЙ ХЕДЕР ДЛЯ МОБИЛЬНЫХ (<MD) -->
+            <header class="md:hidden glass-panel-dark text-amber-50 island-card mx-2 mt-2 mb-2 sticky top-1 z-30 px-3.5 py-2 flex items-center justify-between border border-emerald-900/40">
+                <div class="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                    <i data-lucide="gem" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                    <div class="min-w-0">
+                        <h1 class="text-xs font-bold serif-title tracking-wide text-white leading-tight truncate" id="mobile-header-dynamic-title">
+                            EM — Главная — Сведения
+                        </h1>
+                        <span class="text-[8px] uppercase tracking-widest text-emerald-300 font-bold block truncate leading-none mt-0.5" id="header-subtitle">Система торжеств</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="openModal('modal-help')" class="bg-emerald-900/60 text-amber-300 hover:text-white p-1.5 rounded-lg border border-emerald-800/40 active:scale-95 transition" title="Инструкция">
+                        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <div class="text-right leading-none bg-emerald-900/60 border border-emerald-800/50 px-2 py-1 rounded-lg">
+                        <span class="text-xs font-bold text-amber-400" id="header-seated-count">0/0</span>
+                        <span class="text-[7px] text-emerald-300 block uppercase tracking-wider font-semibold">рассажено</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ГЛАВНЫЙ КОНТЕНТ -->
+            <main class="flex-1 max-w-md md:max-w-6xl w-full mx-auto px-2 md:px-6 pt-1 pb-28 md:pb-8 space-y-4 animate-fadeIn">
 
         <!-- ВКЛАДКА 0: ГЛАВНАЯ (ПРОФИЛЬ, АНАЛИТИКА, НАСТРОЙКИ БД) -->
         <section id="tab-profile" class="tab-content space-y-3 !mt-0">
@@ -155,6 +227,121 @@
                                 <span class="text-sm font-extrabold text-stone-900 block mt-0.5"><span id="profile-view-guests-count">0</span> / <span id="profile-view-planned-guests">0</span> <span class="text-xs text-stone-400 font-normal">чел (в базе / план)</span></span>
                                 <span class="text-[9px] font-bold text-stone-400 block mt-1" id="profile-view-seated-stats">Рассаживайте гостей во вкладке "Схема"</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Опции и модули учета мероприятия (Телефоны, Категории, Финансы) -->
+                    <div class="bg-white/90 glass-panel island-card p-3.5 border border-stone-200/50 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-emerald-800"></i>
+                            <span class="text-xs font-bold text-stone-850">Опции и модули мероприятия:</span>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap text-xs">
+                            <!-- Быстрый тумблер Учета категорий -->
+                            <button type="button" onclick="quickToggleTrackCategories()" id="profile-view-toggle-cat" class="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition flex items-center gap-1.5 shadow-2xs active:scale-95 bg-white border-stone-200 text-stone-700">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500" id="profile-view-cat-dot"></span>
+                                <span>Категории гостей</span>
+                            </button>
+
+                            <!-- Быстрый тумблер Учета телефонов -->
+                            <button type="button" onclick="quickToggleTrackPhones()" id="profile-view-toggle-phone" class="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition flex items-center gap-1.5 shadow-2xs active:scale-95 bg-white border-stone-200 text-stone-700">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500" id="profile-view-phone-dot"></span>
+                                <span>Номера телефонов</span>
+                            </button>
+
+                            <!-- Быстрый тумблер Финансов -->
+                            <button type="button" onclick="quickToggleUseFinance()" id="profile-view-toggle-fin" class="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition flex items-center gap-1.5 shadow-2xs active:scale-95 bg-white border-stone-200 text-stone-700">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500" id="profile-view-fin-dot"></span>
+                                <span>Финансы</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- КАРТОЧКА КАТЕГОРИЙ ГОСТЕЙ В НАСТРОЙКАХ МЕРОПРИЯТИЯ -->
+                    <div id="profile-view-categories-card" class="bg-white/90 glass-panel island-card p-4 border border-stone-200/50 space-y-2.5 shadow-xs">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="bg-emerald-50 text-emerald-800 p-2 rounded-xl border border-emerald-100 shrink-0">
+                                    <i data-lucide="tag" class="w-4 h-4 text-emerald-700"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-xs font-bold text-stone-900 leading-tight">Категории гостей торжества</h3>
+                                    <span class="text-[10px] text-stone-400 font-semibold block" id="profile-categories-status-text">Справочник групп и родства для рассадки</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" onclick="openModal('modal-view-categories')" id="profile-btn-manage-cats" class="bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-bold py-1.5 px-3 rounded-xl border border-stone-200 flex items-center gap-1.5 transition active:scale-95 shadow-2xs">
+                                    <i data-lucide="settings" class="w-3.5 h-3.5 text-stone-500"></i>
+                                    <span>Управление категориями</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Список активных категорий в виде плашек -->
+                        <div id="profile-categories-chips-container" class="flex flex-wrap gap-1.5 pt-1">
+                            <!-- Заполняется в renderProfileCategoriesCard() -->
+                        </div>
+                    </div>
+
+                    <!-- ОСТРОВОК: ПРАЗДНИЧНЫЙ ПРИГЛАСИТЕЛЬНЫЙ БИЛЕТ ТОРЖЕСТВА (С НАСТРОЙКАМИ) -->
+                    <div class="bg-white/95 glass-panel island-card p-4 md:p-5 border border-stone-200/60 space-y-3.5 shadow-sm">
+                        <!-- Шапка блока пригласительного -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-stone-150 pb-3">
+                            <div class="flex items-center gap-2.5">
+                                <div class="bg-amber-100/90 text-amber-800 p-2 rounded-xl border border-amber-300 shrink-0">
+                                    <i data-lucide="mail-open" class="w-4.5 h-4.5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm md:text-base font-bold serif-title text-stone-900 leading-tight">Пригласительный билет торжества</h3>
+                                    <span class="text-[10px] text-stone-400 font-semibold block">Электронная карточка и бланк для приглашения гостей</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <button type="button" onclick="toggleMainInvitationSettings()" class="bg-stone-100 hover:bg-stone-200/80 text-stone-700 text-xs font-bold py-1.5 px-2.5 rounded-xl border border-stone-200 flex items-center gap-1 transition active:scale-95" title="Настроить текст и шаблон">
+                                    <i data-lucide="sliders" class="w-3.5 h-3.5 text-stone-600"></i>
+                                    <span>Настроить текст</span>
+                                </button>
+                                <button type="button" onclick="copyMainInvitationText()" class="bg-stone-100 hover:bg-stone-200/80 text-stone-700 text-xs font-bold py-1.5 px-2.5 rounded-xl border border-stone-200 flex items-center gap-1 transition active:scale-95" title="Скопировать текст для WhatsApp / Telegram">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-stone-600"></i>
+                                    <span class="hidden sm:inline">Скопировать</span>
+                                </button>
+                                <button type="button" onclick="sendWhatsAppGeneralInvitation()" class="bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Отправить текст пригласительного в WhatsApp">
+                                    <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-300"></i>
+                                    <span>WhatsApp</span>
+                                </button>
+                                <button type="button" onclick="sendWhatsAppGeneralInvitationPDF()" class="bg-emerald-900/90 hover:bg-emerald-800 text-amber-300 border border-emerald-700/80 text-xs font-bold py-1.5 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Отправить бланк PDF в WhatsApp">
+                                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-amber-400"></i>
+                                    <span>WhatsApp (PDF)</span>
+                                </button>
+                                <button type="button" onclick="openPrintModal('invitation_general')" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold py-1.5 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать общего пригласительного (А4)">
+                                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                    <span>Печать (А4)</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Выдвижные настройки приглашения на главной (компактные) -->
+                        <div id="main-invitation-settings-drawer" class="hidden bg-stone-50 border border-stone-200 rounded-2xl p-3.5 space-y-2.5 animate-fadeIn">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Шаблон текста:</label>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <button type="button" onclick="setMainInvitationPreset('wedding')" class="text-[10px] font-bold px-2 py-1 rounded-lg border border-stone-250 bg-white hover:bg-stone-100 text-stone-700 transition">Свадебное</button>
+                                    <button type="button" onclick="setMainInvitationPreset('kyz_uzatuu')" class="text-[10px] font-bold px-2 py-1 rounded-lg border border-stone-250 bg-white hover:bg-stone-100 text-stone-700 transition">Кыз узатуу</button>
+                                    <button type="button" onclick="setMainInvitationPreset('birthday')" class="text-[10px] font-bold px-2 py-1 rounded-lg border border-stone-250 bg-white hover:bg-stone-100 text-stone-700 transition">Юбилей</button>
+                                    <button type="button" onclick="setMainInvitationPreset('general')" class="text-[10px] font-bold px-2 py-1 rounded-lg border border-stone-250 bg-white hover:bg-stone-100 text-stone-700 transition">Семейное</button>
+                                    <button type="button" onclick="setMainInvitationPreset('short')" class="text-[10px] font-bold px-2 py-1 rounded-lg border border-stone-250 bg-white hover:bg-stone-100 text-stone-700 transition">Краткое</button>
+                                </div>
+                            </div>
+                            <div>
+                                <textarea id="main-invitation-text-input" rows="3" oninput="handleMainInvitationTextChange(event)"
+                                          class="w-full bg-white border border-stone-250 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs"
+                                          placeholder="Введите текст приглашения..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Интерактивный предпросмотр общего пригласительного (Luxury открытка) -->
+                        <div class="max-w-xl mx-auto" id="main-invitation-card-container">
+                            <!-- Генерируется функцией renderMainInvitationCard() -->
                         </div>
                     </div>
 
@@ -274,6 +461,14 @@
                                     <input type="checkbox" id="profile-track-categories" class="sr-only peer">
                                     <div class="w-9 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-800 relative"></div>
                                 </label>
+                            </div>
+
+                            <div class="md:col-span-2 flex justify-between items-center bg-stone-100/70 p-3 rounded-xl border border-stone-200/60 text-xs">
+                                <span class="text-stone-600 text-[11px] font-semibold">Список категорий торжества:</span>
+                                <button type="button" onclick="openModal('modal-view-categories')" class="text-emerald-800 hover:text-emerald-950 font-bold flex items-center gap-1 text-[11px] active:scale-95 transition">
+                                    <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                                    <span>Редактировать список категорий</span>
+                                </button>
                             </div>
 
                             <!-- Группа финансовых полей (показывается/скрывается) -->
@@ -423,23 +618,23 @@
             <!-- Sticky Subtabs and Filters Toggle (Floating Island + Compact) -->
             <div class="sticky top-[54px] md:top-[48px] z-20 bg-transparent pointer-events-none pb-0.5 pt-0.5 -mx-2 px-2 md:-mx-4 md:px-4 -mt-2 -mb-2 border-none">
                 <div class="flex bg-white/95 backdrop-blur-md p-0.5 rounded-xl border border-stone-200/80 max-w-[340px] md:max-w-md mx-auto gap-0.5 shadow-md pointer-events-auto items-center">
-                    <!-- Суб-вкладки -->
-                    <div class="flex-1 flex gap-0.5">
-                        <button onclick="switchGuestsViewMode('list')" id="subtab-btn-list" class="flex-1 justify-center text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-xs">
-                            <i data-lucide="list" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span>Список</span>
+                    <!-- Суб-вкладки (На мобильных — объемные островки с иконками, на ПК — с названиями) -->
+                    <div class="flex-1 flex gap-1">
+                        <button onclick="switchGuestsViewMode('list')" id="subtab-btn-list" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-emerald-800 text-white shadow-xs" title="Список гостей">
+                            <i data-lucide="list" class="w-4 h-4 shrink-0"></i>
+                            <span class="hidden md:inline">Список</span>
                         </button>
-                        <button onclick="switchGuestsViewMode('spreadsheet')" id="subtab-btn-spreadsheet" class="flex-1 justify-center text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50">
-                            <i data-lucide="table-2" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span>Таблица</span>
+                        <button onclick="switchGuestsViewMode('spreadsheet')" id="subtab-btn-spreadsheet" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Таблица">
+                            <i data-lucide="table-2" class="w-4 h-4 shrink-0"></i>
+                            <span class="hidden md:inline">Таблица</span>
                         </button>
-                        <button onclick="switchGuestsViewMode('tables')" id="subtab-btn-tables" class="flex-1 justify-center text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50">
-                            <i data-lucide="armchair" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span>Столы</span>
+                        <button onclick="switchGuestsViewMode('tables')" id="subtab-btn-tables" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Столы">
+                            <i data-lucide="armchair" class="w-4 h-4 shrink-0"></i>
+                            <span class="hidden md:inline">Столы</span>
                         </button>
-                        <button onclick="switchGuestsViewMode('categories')" id="subtab-btn-categories" class="flex-1 justify-center text-center py-1.5 px-1 rounded-md text-[10px] md:text-xs font-bold transition flex items-center gap-1 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50">
-                            <i data-lucide="tags" class="w-3.5 h-3.5 shrink-0"></i>
-                            <span>Категории</span>
+                        <button onclick="switchGuestsViewMode('categories')" id="subtab-btn-categories" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Категории">
+                            <i data-lucide="tags" class="w-4 h-4 shrink-0"></i>
+                            <span class="hidden md:inline">Категории</span>
                         </button>
                     </div>
                     
@@ -482,10 +677,14 @@
                            class="w-4 h-4 text-emerald-800 bg-white border-stone-300 rounded focus:ring-emerald-700">
                     <label for="select-all-cb" class="cursor-pointer">Выбрать всех</label>
                 </div>
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="openPrintModal()" class="bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] md:text-xs font-bold py-1.5 px-2.5 rounded-lg border border-stone-200/70 shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать списков гостей для А4">
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openPrintModal('seating')" class="bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] md:text-xs font-bold py-1.5 px-2.5 rounded-lg border border-stone-200/70 shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать списков рассадки для А4">
                         <i data-lucide="printer" class="w-3.5 h-3.5 text-emerald-800"></i>
                         <span>Печать А4</span>
+                    </button>
+                    <button type="button" onclick="openPrintModal('invitation_personal')" class="bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] md:text-xs font-bold py-1.5 px-2.5 rounded-lg border border-amber-200/70 shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать персональных пригласительных билетов (А4)">
+                        <i data-lucide="mail" class="w-3.5 h-3.5 text-amber-600"></i>
+                        <span>Билеты (А4)</span>
                     </button>
                     <div class="shrink-0 text-stone-600">
                         Показано: <span id="total-guests-count" class="font-extrabold text-stone-850">0</span>
@@ -569,7 +768,13 @@
             <div class="px-1 space-y-1">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xs text-stone-500 font-bold uppercase tracking-wider">Схема расстановки столов</h2>
-                    <span class="text-[9px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-lg uppercase tracking-wider">2D Планировщик</span>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="openPrintModal('schema')" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold py-1.5 px-3 rounded-xl shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать схемы зала (А4)">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                            <span>Печать схемы А4</span>
+                        </button>
+                        <span class="text-[9px] bg-amber-100 text-amber-900 font-bold px-2 py-1 rounded-lg uppercase tracking-wider hidden sm:inline">2D Планировщик</span>
+                    </div>
                 </div>
                 <p id="schema-helper-text" class="text-[10px] text-stone-400 font-semibold leading-relaxed">
                     💡 <strong>Управление на ПК:</strong> Двигайте столы на <strong>ЛКМ</strong>. Двигайте сам зал на <strong>ПКМ</strong> или свободный фон. Колесо мыши / жест двумя пальцами — <strong>масштаб</strong>. Клик на стул выводит подсказку. Зажатие на 150мс поднимает гостя.
@@ -797,9 +1002,9 @@
             </div>
         </section>
 
-
-
     </main>
+        </div> <!-- Конец правой области -->
+    </div> <!-- Конец главного адаптивного лейаута -->
 
     <!-- ПЛАВАЮЩИЙ БАР ДЛЯ ВЫДЕЛЕННЫХ ГОСТЕЙ -->
     <div id="bulk-action-bar" class="fixed bottom-24 left-0 right-0 z-40 px-4 py-2 transform translate-y-28 opacity-0 pointer-events-none transition-all duration-300">
@@ -813,7 +1018,7 @@
                 <button onclick="openMassSeatModal()" class="bg-emerald-800 hover:bg-emerald-700 text-xs font-bold py-2 px-3 rounded-xl flex items-center gap-1 transition">
                     <i data-lucide="armchair" class="w-3.5 h-3.5"></i> Рассадка
                 </button>
-                <button onclick="openMassCategoryModal()" class="bg-emerald-800 hover:bg-emerald-700 text-xs font-bold py-2 px-3 rounded-xl flex items-center gap-1 transition">
+                <button id="bulk-btn-mass-category" onclick="openMassCategoryModal()" class="bg-emerald-800 hover:bg-emerald-700 text-xs font-bold py-2 px-3 rounded-xl flex items-center gap-1 transition">
                     <i data-lucide="tag" class="w-3.5 h-3.5"></i> Категория
                 </button>
                 <button onclick="confirmMassDelete()" class="bg-red-800 hover:bg-red-700 text-xs font-bold p-2.5 rounded-xl transition">
@@ -942,13 +1147,13 @@
                            class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
                 </div>
 
-                <div>
+                <div id="guest-phone-container">
                     <label class="text-xs font-bold text-stone-500 block mb-1">Номер телефона (необязательно)</label>
                     <input type="tel" id="guest-phone" placeholder="Например: +9967071234567" 
                            class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
                 </div>
 
-                <div>
+                <div id="guest-category-container">
                     <label class="text-xs font-bold text-stone-500 block mb-1">Категория</label>
                     <select id="guest-category" class="w-full bg-stone-50 border border-stone-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700">
                     </select>
@@ -1943,183 +2148,398 @@
     <!-- ========================================== -->
     <!--     МОДАЛКА: ПЕЧАТЬ И ПРИГЛАСИТЕЛЬНЫЕ (А4) -->
     <!-- ========================================== -->
-    <div id="modal-print-guests" class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 md:p-4 hidden">
-        <div class="bg-white rounded-3xl w-full max-w-5xl overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[94vh]">
+    <div id="modal-print-guests" class="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-0 md:p-3 lg:p-4 hidden">
+        <div class="bg-white md:rounded-3xl w-full max-w-7xl h-full md:h-[94vh] overflow-hidden shadow-2xl transform scale-95 opacity-0 transition-all duration-300 flex flex-col">
             
-            <!-- Шапка окна печати -->
-            <div class="bg-emerald-950 text-white p-3.5 md:p-4 flex justify-between items-center shrink-0">
-                <div class="flex items-center gap-2.5">
-                    <div class="bg-emerald-900/80 p-2 rounded-xl text-amber-400 border border-emerald-800/60">
+            <!-- ШАПКА ДЛЯ ПК (MD+) -->
+            <div class="hidden md:flex bg-emerald-950 text-white px-5 py-3 justify-between items-center shrink-0 border-b border-emerald-900/60">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-900/80 p-2 rounded-xl text-amber-400 border border-emerald-800/60 shrink-0">
                         <i data-lucide="printer" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold serif-title text-base" id="print-modal-heading">Печать рассадки и пригласительных (А4)</h3>
-                        <span class="text-[10px] text-emerald-300 font-semibold block">Размещение столов на листах А4, время, локация и праздничные пригласительные</span>
+                        <h3 class="font-bold serif-title text-base" id="pc-print-modal-heading">Центр печати: Списки столов и Пригласительные (Формат А4)</h3>
+                        <span class="text-[11px] text-emerald-300 font-medium block">Настройте параметры слева — полноценный лист А4 отображается справа в реальном времени</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="triggerPrint()" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 text-xs font-bold py-2 px-3.5 rounded-xl shadow-sm flex items-center gap-1.5 transition">
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="triggerPrint()" class="bg-amber-400 hover:bg-amber-300 active:scale-95 text-stone-950 text-xs font-bold py-2 px-4 rounded-xl shadow-sm flex items-center gap-1.5 transition">
                         <i data-lucide="printer" class="w-4 h-4"></i>
-                        <span>Распечатать / PDF</span>
+                        <span>Распечатать / Сохранить в PDF</span>
                     </button>
-                    <button type="button" onclick="closeModal('modal-print-guests')" class="text-stone-300 hover:text-white p-1 rounded-lg">
+                    <button type="button" onclick="closeModal('modal-print-guests')" class="text-stone-300 hover:text-white p-1.5 rounded-xl hover:bg-emerald-900 transition" title="Закрыть">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Переключатель режима: Рассадка vs Пригласительные -->
-            <div class="bg-stone-100 border-b border-stone-200 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
-                <div class="inline-flex p-1 bg-stone-200/80 rounded-xl gap-1">
-                    <button type="button" id="print-tab-seating-btn" onclick="switchPrintMode('seating')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-emerald-800 text-white shadow-xs">
-                        <i data-lucide="armchair" class="w-3.5 h-3.5"></i>
-                        <span>План рассадки столов</span>
+            <!-- УЛЬТРАКОМПАКТНАЯ ШАПКА ДЛЯ МОБИЛЬНЫХ (<MD, высота всего 44px) -->
+            <div class="md:hidden bg-emerald-950 text-white px-2 py-1.5 flex justify-between items-center shrink-0 border-b border-emerald-900/60 select-none">
+                <!-- Компактные кнопки переключения режима прямо в шапке (Столы, Схема, Общий, Личные) -->
+                <div class="flex items-center gap-0.5 bg-stone-900/70 p-0.5 rounded-lg border border-emerald-900/80">
+                    <button type="button" onclick="switchPrintMode('seating')" id="mobile-tab-btn-seating" class="px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-2xs">
+                        <i data-lucide="armchair" class="w-3 h-3"></i>
+                        <span>Столы</span>
                     </button>
-                    <button type="button" id="print-tab-invitation-btn" onclick="switchPrintMode('invitation')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-stone-600 hover:text-stone-900">
-                        <i data-lucide="mail-open" class="w-3.5 h-3.5 text-amber-600"></i>
-                        <span>Пригласительные билеты</span>
+                    <button type="button" onclick="switchPrintMode('schema')" id="mobile-tab-btn-schema" class="px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
+                        <i data-lucide="map" class="w-3 h-3 text-emerald-400"></i>
+                        <span>Схема</span>
+                    </button>
+                    <button type="button" onclick="switchPrintMode('invitation_general')" id="mobile-tab-btn-inv-gen" class="px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
+                        <i data-lucide="mail-open" class="w-3 h-3 text-amber-400"></i>
+                        <span>Общий</span>
+                    </button>
+                    <button type="button" onclick="switchPrintMode('invitation_personal')" id="mobile-tab-btn-inv-pers" class="px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 text-stone-300 hover:text-white">
+                        <i data-lucide="user-check" class="w-3 h-3 text-amber-300"></i>
+                        <span>Личные</span>
                     </button>
                 </div>
 
-                <!-- Быстрое уточнение сведений для печати (Название, Время, Место) -->
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="togglePrintEventDetails()" id="btn-toggle-print-details" class="text-[11px] font-bold text-stone-600 hover:text-emerald-800 bg-white border border-stone-250 px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition">
-                        <i data-lucide="edit-3" class="w-3.5 h-3.5 text-emerald-700"></i>
-                        <span>Сведения о событии для печати</span>
+                <!-- Быстрые действия: [ ⚙️ Опции ] [ 🖨️ ] [ ✕ ] -->
+                <div class="flex items-center gap-1">
+                    <button type="button" onclick="openMobilePrintSettingsDrawer()" class="bg-emerald-900/90 hover:bg-emerald-900 active:scale-95 text-amber-300 border border-emerald-700/80 text-[10px] font-bold py-1 px-2 rounded-lg flex items-center gap-1 transition shadow-2xs">
+                        <i data-lucide="sliders" class="w-3 h-3"></i>
+                        <span>Опции</span>
+                    </button>
+                    <button type="button" onclick="triggerPrint()" class="bg-amber-400 text-stone-950 font-bold p-1 rounded-lg active:scale-95 transition shadow-2xs" title="Распечатать">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button type="button" onclick="closeModal('modal-print-guests')" class="text-stone-300 hover:text-white p-1 rounded-lg active:scale-95" title="Закрыть">
+                        <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Выдвижной блок сведений события (Название, Время, Место) -->
-            <div id="print-event-details-drawer" class="hidden bg-emerald-50/60 border-b border-emerald-200/80 p-3 shrink-0 animate-fadeIn">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                    <div>
-                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Название мероприятия</label>
-                        <input type="text" id="print-event-name" oninput="handlePrintEventDetailsChange()" placeholder="Например: Свадьба Азамата и Асели"
-                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Дата</label>
-                        <input type="date" id="print-event-date" onchange="handlePrintEventDetailsChange()"
-                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Время сбора / проведения</label>
-                        <input type="text" id="print-event-time" oninput="handlePrintEventDetailsChange()" placeholder="Например: 18:00 (сбор гостей в 17:30)"
-                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-emerald-900 uppercase block mb-0.5">Место проведения</label>
-                        <input type="text" id="print-event-venue" oninput="handlePrintEventDetailsChange()" placeholder="Например: Банкетный зал «Ала-Тоо»"
-                               class="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
-                    </div>
-                </div>
-            </div>
+            <!-- ТЕЛО МОДАЛКИ: ДВУХКОЛОНОЧНЫЙ LAYOUT НА ПК, ПОЛНОЭКРАННЫЙ А4 НА ТЕЛЕФОНЕ -->
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
-            <!-- ПАНЕЛЬ 1: Настройки печати рассадки столов -->
-            <div id="print-seating-toolbar" class="bg-stone-50 border-b border-stone-200 p-3 shrink-0 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap items-center gap-3">
-                    <!-- Выбор количества столов на 1 лист А4 -->
-                    <div>
-                        <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Столов на один лист А4:</label>
-                        <select id="print-tables-per-page" onchange="updatePrintPreview()" class="bg-white border border-stone-250 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs">
-                            <option value="4" selected>4 стола на страницу (Сетка 2×2) — Рекомендуется</option>
-                            <option value="1">1 стол на страницу (Крупный шрифт)</option>
-                            <option value="2">2 стола на страницу (1×2)</option>
-                            <option value="6">6 столов на страницу (Сетка 2×3, компактно)</option>
-                        </select>
-                    </div>
+                <!-- ЛЕВАЯ КОЛОНКА НА ПК (САЙДБАР ВСЕХ НАСТРОЕК) -->
+                <aside class="hidden md:flex md:w-[360px] lg:w-[410px] shrink-0 border-r border-stone-200 bg-stone-50 flex-col overflow-y-auto p-4 space-y-3.5" id="pc-print-sidebar">
+                    <div id="pc-print-sidebar-slot">
+                        <!-- ЕДИНЫЙ БЛОК НАСТРОЕК (ПЕРЕМЕЩАЕТСЯ В МОБИЛЬНЫЙ DRAWER И ОБРАТНО) -->
+                        <div id="print-settings-content" class="space-y-3.5">
+                            
+                            <!-- Переключатель режима для ПК (4 режима) -->
+                            <div class="hidden md:block">
+                                <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Режим печати:</label>
+                                <div class="grid grid-cols-4 gap-1 bg-stone-200/80 p-1 rounded-xl text-center">
+                                    <button type="button" id="print-tab-seating-btn" onclick="switchPrintMode('seating')" class="py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 bg-emerald-800 text-white shadow-xs" title="План рассадки столов">
+                                        <i data-lucide="armchair" class="w-3.5 h-3.5"></i>
+                                        <span>Столы</span>
+                                    </button>
+                                    <button type="button" id="print-tab-schema-btn" onclick="switchPrintMode('schema')" class="py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 text-stone-600 hover:text-stone-900" title="Схема расстановки зала">
+                                        <i data-lucide="map" class="w-3.5 h-3.5 text-emerald-700"></i>
+                                        <span>Схема</span>
+                                    </button>
+                                    <button type="button" id="print-tab-inv-gen-btn" onclick="switchPrintMode('invitation_general')" class="py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 text-stone-600 hover:text-stone-900" title="Общий пригласительный билет">
+                                        <i data-lucide="mail-open" class="w-3.5 h-3.5 text-amber-600"></i>
+                                        <span>Общий</span>
+                                    </button>
+                                    <button type="button" id="print-tab-inv-pers-btn" onclick="switchPrintMode('invitation_personal')" class="py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 text-stone-600 hover:text-stone-900" title="Персональные карточки гостей">
+                                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-amber-600"></i>
+                                        <span>Личные</span>
+                                    </button>
+                                </div>
+                            </div>
 
-                    <!-- Опции колонок -->
-                    <div class="flex flex-wrap items-center gap-3 pt-2.5 select-none">
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-stone-700">
-                            <input type="checkbox" id="print-opt-checkin" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
-                            <span>Колонка отметок</span>
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-stone-700">
-                            <input type="checkbox" id="print-opt-empty-seats" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
-                            <span>Свободные места</span>
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-stone-700">
-                            <input type="checkbox" id="print-opt-phone" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
-                            <span>Телефоны</span>
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-stone-700">
-                            <input type="checkbox" id="print-opt-category" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
-                            <span>Категории</span>
-                        </label>
-                        <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-stone-700">
-                            <input type="checkbox" id="print-opt-unassigned" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
-                            <span>Гости без стола</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
+                            <!-- Блок сведений о событии (Название, Дата, Время, Место, Организаторы) + Настройки Шапки -->
+                            <div class="bg-white border border-stone-200/80 rounded-2xl p-3 space-y-2.5 shadow-2xs">
+                                <div class="flex items-center justify-between border-b border-stone-150 pb-1.5">
+                                    <span class="text-[11px] font-bold text-stone-700 flex items-center gap-1.5">
+                                        <i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-800"></i>
+                                        <span>Сведения и шапка листа А4</span>
+                                    </span>
+                                    <span class="text-[9px] text-stone-400 font-semibold">Настройки шапки</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-0.5">
+                                            <label class="text-[9px] font-bold text-stone-500 uppercase block">Название мероприятия</label>
+                                            <label class="flex items-center gap-1 text-[9px] text-stone-500 font-semibold cursor-pointer">
+                                                <input type="checkbox" id="print-hdr-name" checked onchange="updatePrintPreview()" class="w-3 h-3 text-emerald-800 rounded">
+                                                <span>в шапке</span>
+                                            </label>
+                                        </div>
+                                        <input type="text" id="print-event-name" oninput="handlePrintEventDetailsChange()" placeholder="Название торжества"
+                                               class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <div class="flex justify-between items-center mb-0.5">
+                                                <label class="text-[9px] font-bold text-stone-500 uppercase block">Дата</label>
+                                                <label class="flex items-center gap-1 text-[9px] text-stone-500 font-semibold cursor-pointer">
+                                                    <input type="checkbox" id="print-hdr-date" checked onchange="updatePrintPreview()" class="w-3 h-3 text-emerald-800 rounded">
+                                                    <span>в шапке</span>
+                                                </label>
+                                            </div>
+                                            <input type="date" id="print-event-date" onchange="handlePrintEventDetailsChange()"
+                                                   class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        </div>
+                                        <div>
+                                            <div class="flex justify-between items-center mb-0.5">
+                                                <label class="text-[9px] font-bold text-stone-500 uppercase block">Время сбора</label>
+                                                <label class="flex items-center gap-1 text-[9px] text-stone-500 font-semibold cursor-pointer">
+                                                    <input type="checkbox" id="print-hdr-time" checked onchange="updatePrintPreview()" class="w-3 h-3 text-emerald-800 rounded">
+                                                    <span>в шапке</span>
+                                                </label>
+                                            </div>
+                                            <input type="text" id="print-event-time" oninput="handlePrintEventDetailsChange()" placeholder="18:00"
+                                                   class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-0.5">
+                                            <label class="text-[9px] font-bold text-stone-500 uppercase block">Место проведения</label>
+                                            <label class="flex items-center gap-1 text-[9px] text-stone-500 font-semibold cursor-pointer">
+                                                <input type="checkbox" id="print-hdr-venue" checked onchange="updatePrintPreview()" class="w-3 h-3 text-emerald-800 rounded">
+                                                <span>в шапке</span>
+                                            </label>
+                                        </div>
+                                        <input type="text" id="print-event-venue" oninput="handlePrintEventDetailsChange()" placeholder="Банкетный зал / Ресторан"
+                                               class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between items-center mb-0.5">
+                                            <label class="text-[9px] font-bold text-stone-500 uppercase block">Организаторы / Той ээлери</label>
+                                            <label class="flex items-center gap-1 text-[9px] text-stone-500 font-semibold cursor-pointer">
+                                                <input type="checkbox" id="print-hdr-hosts" checked onchange="updatePrintPreview()" class="w-3 h-3 text-emerald-800 rounded">
+                                                <span>в шапке</span>
+                                            </label>
+                                        </div>
+                                        <input type="text" id="print-event-hosts" oninput="handlePrintEventDetailsChange()" placeholder="Например: Семья Исаевых / Той ээлери"
+                                               class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                    </div>
 
-            <!-- ПАНЕЛЬ 2: Настройки печати пригласительных (Текст, Шаблоны, Раскладка) -->
-            <div id="print-invitation-toolbar" class="hidden bg-stone-50 border-b border-stone-200 p-3.5 shrink-0 space-y-3">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <!-- Количество карточек на 1 лист А4 -->
-                        <div>
-                            <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Формат на листе А4:</label>
-                            <select id="print-invitation-layout" onchange="updatePrintPreview()" class="bg-white border border-stone-250 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs">
-                                <option value="2" selected>2 пригласительных на лист А4 (Формат А5 с линией отреза)</option>
-                                <option value="1">1 роскошное приглашение на весь лист А4</option>
-                                <option value="4">4 карточки на лист А4 (Формат А6 с линиями отреза)</option>
-                            </select>
+                                    <div class="pt-1 border-t border-stone-150 flex items-center justify-between">
+                                        <label class="flex items-center gap-1.5 cursor-pointer text-[10px] font-semibold text-stone-600">
+                                            <input type="checkbox" id="print-hdr-footer" checked onchange="updatePrintPreview()" class="w-3.5 h-3.5 text-emerald-800 rounded">
+                                            <span>Колонтитул (нумерация и дата печати)</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- НАСТРОЙКИ ДЛЯ РЕЖИМА "СХЕМА ЗАЛА" -->
+                            <div id="print-schema-toolbar" class="hidden bg-white border border-stone-200/80 rounded-2xl p-3 space-y-3 shadow-2xs">
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Ориентация страницы:</label>
+                                    <select id="print-schema-orientation" onchange="updatePrintPreview()" class="w-full bg-stone-50 border border-stone-200 font-bold text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="landscape" selected>Альбомная (Горизонтальная — Рекомендуется)</option>
+                                        <option value="portrait">Книжная (Вертикальная)</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-1.5 pt-1 border-t border-stone-150">
+                                    <span class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Элементы листа схемы:</span>
+                                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700 py-0.5">
+                                        <input type="checkbox" id="print-schema-opt-legend" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
+                                        <span>Легенда схемы (занято / свободно)</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700 py-0.5">
+                                        <input type="checkbox" id="print-schema-opt-summary" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
+                                        <span>Сводная таблица столов и мест</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- НАСТРОЙКИ ДЛЯ РЕЖИМА "РАССАДКА СТОЛОВ" -->
+                            <div id="print-seating-toolbar" class="bg-white border border-stone-200/80 rounded-2xl p-3 space-y-3 shadow-2xs">
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Столов на 1 лист А4:</label>
+                                    <select id="print-tables-per-page" onchange="updatePrintPreview()" class="w-full bg-stone-50 border border-stone-200 font-bold text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="4" selected>4 стола на страницу (Сетка 2×2) — Рекомендуется</option>
+                                        <option value="1">1 стол на страницу (Крупный шрифт)</option>
+                                        <option value="2">2 стола на страницу (1×2)</option>
+                                        <option value="6">6 столов на страницу (Сетка 2×3, компактно)</option>
+                                    </select>
+                                </div>
+
+                                <div class="space-y-1.5 pt-1 border-t border-stone-150">
+                                    <span class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Отображаемые колонки:</span>
+                                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700 py-0.5">
+                                        <input type="checkbox" id="print-opt-checkin" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
+                                        <span>Колонка для отметок гостей</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700 py-0.5">
+                                        <input type="checkbox" id="print-opt-empty-seats" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
+                                        <span>Свободные места за столом</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700 py-0.5">
+                                        <input type="checkbox" id="print-opt-phone" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
+                                        <span>Номера телефонов гостей</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700 py-0.5">
+                                        <input type="checkbox" id="print-opt-category" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
+                                        <span>Категории гостей и столов</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-stone-700 py-0.5">
+                                        <input type="checkbox" id="print-opt-unassigned" checked onchange="updatePrintPreview()" class="w-4 h-4 text-emerald-800 rounded">
+                                        <span>Лист нерассаженных гостей (Резерв)</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- НАСТРОЙКИ ДЛЯ РЕЖИМА "ОБЩИЙ ПРИГЛАСИТЕЛЬНЫЙ" -->
+                            <div id="print-invitation-gen-toolbar" class="hidden bg-white border border-stone-200/80 rounded-2xl p-3 space-y-3 shadow-2xs">
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Формат бланка на листе А4:</label>
+                                    <select id="print-inv-gen-layout" onchange="updatePrintPreview()" class="w-full bg-stone-50 border border-stone-200 font-bold text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="2" selected>2 билета на лист А4 (Формат А5 с линией отреза)</option>
+                                        <option value="1">1 большой роскошный билет на весь лист А4</option>
+                                        <option value="4">4 открытки на лист А4 (Формат А6 с линиями отреза)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Шаблон текста приглашения:</label>
+                                    <select id="print-inv-gen-template-select" onchange="applyGeneralInvitationTemplate(this.value)" class="w-full bg-stone-50 border border-stone-200 font-bold text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="wedding">Свадебное торжество</option>
+                                        <option value="kyz_uzatuu">Кыз узатуу / Бешик той</option>
+                                        <option value="birthday">Юбилей / День рождения</option>
+                                        <option value="general">Семейное торжество / Праздник</option>
+                                        <option value="short">Краткое приглашение</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <div class="flex items-center justify-between mb-1">
+                                        <label class="text-[10px] font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1">
+                                            <i data-lucide="edit" class="w-3 h-3 text-amber-600"></i>
+                                            <span>Текст общего пригласительного:</span>
+                                        </label>
+                                    </div>
+                                    <textarea id="print-inv-gen-text" rows="3" oninput="handleGeneralInvitationTextChange(event)"
+                                              class="w-full bg-stone-50 border border-stone-200 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs"
+                                              placeholder="Введите текст приглашения..."></textarea>
+                                </div>
+
+                                <div class="pt-1 border-t border-stone-150">
+                                    <button type="button" onclick="sendWhatsAppGeneralInvitationPDF()" class="w-full bg-emerald-900/90 hover:bg-emerald-800 active:scale-95 text-amber-300 border border-emerald-700/80 text-xs font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-2xs">
+                                        <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-400"></i>
+                                        <span>Отправить этот бланк в WhatsApp (PDF)</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- НАСТРОЙКИ ДЛЯ РЕЖИМА "ПЕРСОНАЛЬНЫЕ ПРИГЛАСИТЕЛЬНЫЕ" -->
+                            <div id="print-invitation-pers-toolbar" class="hidden bg-white border border-stone-200/80 rounded-2xl p-3 space-y-3 shadow-2xs">
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Карточек на листе А4:</label>
+                                    <select id="print-inv-pers-layout" onchange="updatePrintPreview()" class="w-full bg-stone-50 border border-stone-200 font-bold text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="2" selected>2 персональные карточки на лист А4 (А5)</option>
+                                        <option value="1">1 персональная карточка на весь лист А4</option>
+                                        <option value="4">4 персональные карточки на лист А4 (А6)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Выбор гостей для карточек:</label>
+                                    <select id="print-inv-pers-filter" onchange="updatePrintPreview()" class="w-full bg-stone-50 border border-stone-200 font-bold text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="all" selected>Все гости торжества (с номерами столов)</option>
+                                        <option value="seated_only">Только рассаженные по столам</option>
+                                        <option value="selected_only">Только выбранный гость (1 билет)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Шаблон текста карточки:</label>
+                                    <select id="print-inv-pers-template-select" onchange="applyPersonalInvitationTemplate(this.value)" class="w-full bg-stone-50 border border-stone-200 font-bold text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700">
+                                        <option value="wedding">Свадебное торжество</option>
+                                        <option value="kyz_uzatuu">Кыз узатуу / Бешик той</option>
+                                        <option value="birthday">Юбилей / День рождения</option>
+                                        <option value="general">Семейное торжество</option>
+                                        <option value="short">Краткое приглашение</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="text-[10px] font-bold text-stone-600 uppercase tracking-wider block mb-1">Текст персонального билета:</label>
+                                    <textarea id="print-inv-pers-text" rows="3" oninput="handlePersonalInvitationTextChange(event)"
+                                              class="w-full bg-stone-50 border border-stone-200 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs"
+                                              placeholder="Текст приглашения..."></textarea>
+                                </div>
+
+                                <div class="pt-1 border-t border-stone-150 space-y-2">
+                                    <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block">Быстрая отправка гостю в WhatsApp:</label>
+                                    <div class="flex gap-1.5 flex-wrap sm:flex-nowrap">
+                                        <select id="print-inv-pers-guest-select" onchange="if(document.getElementById('print-inv-pers-filter').value === 'selected_only') updatePrintPreview();" class="flex-1 bg-stone-50 border border-stone-200 text-xs rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-emerald-700 font-medium truncate">
+                                        </select>
+                                        <button type="button" onclick="sendSelectedGuestWhatsApp()" class="bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold py-2 px-2.5 rounded-xl transition shadow-xs flex items-center gap-1 shrink-0" title="Отправить текст приглашения в WhatsApp">
+                                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                            <span>Текст</span>
+                                        </button>
+                                        <button type="button" onclick="sendSelectedGuestWhatsAppPDF()" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold py-2 px-2.5 rounded-xl transition shadow-xs flex items-center gap-1 shrink-0" title="Сформировать и отправить билет в WhatsApp">
+                                            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+                                            <span>PDF</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Быстрая кнопка печати внизу сайдбара ПК -->
+                            <div class="hidden md:block pt-2">
+                                <button type="button" onclick="triggerPrint()" class="w-full bg-emerald-800 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+                                    <i data-lucide="printer" class="w-4 h-4"></i>
+                                    <span>Распечатать / Сохранить в PDF</span>
+                                </button>
+                                <span class="text-[10px] text-stone-400 text-center block mt-1.5">В окне печати браузера выберите формат А4</span>
+                            </div>
+
                         </div>
+                    </div>
+                </aside>
 
-                        <!-- Персональные или общий бланк -->
-                        <div>
-                            <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Получатели:</label>
-                            <select id="print-invitation-recipient" onchange="updatePrintPreview()" class="bg-white border border-stone-250 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs">
-                                <option value="all_personal" selected>Персональные (Имя гостя + номер его стола)</option>
-                                <option value="general">Общий бланк (со строкой для имени «Уважаемый(ая)...»)</option>
-                            </select>
-                        </div>
-
-                        <!-- Готовые шаблоны текста -->
-                        <div>
-                            <label class="text-[10px] font-bold text-stone-500 uppercase tracking-wider block mb-1">Шаблон текста:</label>
-                            <select id="print-invitation-template-select" onchange="applyInvitationTemplate(this.value)" class="bg-white border border-stone-250 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs">
-                                <option value="wedding">Свадебное торжество</option>
-                                <option value="kyz_uzatuu">Кыз узатуу / Бешик той</option>
-                                <option value="birthday">Юбилей / День рождения</option>
-                                <option value="general">Семейное торжество / Праздник</option>
-                                <option value="short">Краткое приглашение</option>
-                            </select>
+                <!-- ПРАВАЯ ОБЛАСТЬ: ПОЛНОЦЕННЫЙ ПРЕДПРОСМОТР А4 -->
+                <main class="flex-1 bg-stone-200/90 overflow-y-auto flex flex-col p-1 sm:p-3 md:p-6" id="print-main-preview-area">
+                    <!-- Верхняя компактная плашка предпросмотра (только для ПК) -->
+                    <div class="hidden md:flex justify-between items-center mb-2 px-1 text-[11px] font-bold text-stone-600 select-none">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="file-text" class="w-3.5 h-3.5 text-emerald-800"></i>
+                            <span id="preview-sheet-title">Предпросмотр формата А4 (210×297 мм)</span>
+                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="togglePrintZoomFit()" id="btn-print-zoom" class="bg-white/90 hover:bg-white text-stone-700 border border-stone-250 text-[10px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs">
+                                <i data-lucide="maximize-2" class="w-3 h-3 text-stone-500"></i>
+                                <span id="btn-print-zoom-text">По ширине</span>
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Редактируемый текст приглашения -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="text-[10px] font-bold text-stone-600 uppercase tracking-wider flex items-center gap-1">
-                            <i data-lucide="edit" class="w-3 h-3 text-amber-600"></i>
-                            <span>Текст пригласительного (редактируйте прямо здесь):</span>
-                        </label>
-                        <span class="text-[10px] text-stone-400">Изменения сразу видны на открытках ниже</span>
+                    <!-- Контейнер листов А4 (на весь экран на телефоне) -->
+                    <div class="flex-1 overflow-y-auto transition-transform duration-200" id="print-preview-container">
+                        <!-- Динамические листы А4 -->
                     </div>
-                    <textarea id="print-invitation-text" rows="2" oninput="handleInvitationTextChange(event)"
-                              class="w-full bg-white border border-stone-250 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-700 shadow-2xs"
-                              placeholder="Введите теплый текст приглашения..."></textarea>
+                </main>
+            </div>
+
+            <!-- ВЫДВИЖНОЙ НИЖНИЙ DRAWER ДЛЯ МОБИЛЬНЫХ НАСТРОЕК (ВСПЛЫВАЕТ СНИЗУ ПО КНОПКЕ "ОПЦИИ") -->
+            <div id="mobile-print-settings-drawer" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end hidden md:!hidden animate-fadeIn">
+                <div class="bg-white rounded-t-3xl max-h-[85vh] flex flex-col shadow-2xl border-t border-stone-200 overflow-hidden animate-slideUp">
+                    <div class="bg-emerald-950 text-white px-4 py-3 flex justify-between items-center shrink-0">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                            <h4 class="font-bold text-sm serif-title">Настройки печати и оформления</h4>
+                        </div>
+                        <button type="button" onclick="closeMobilePrintSettingsDrawer()" class="text-stone-300 hover:text-white p-1">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-y-auto space-y-4 flex-1 bg-stone-50" id="mobile-print-controls-target">
+                        <!-- Сюда временно монтируется блок print-settings-content -->
+                    </div>
+                    <div class="p-3 bg-white border-t border-stone-200 flex gap-2 shrink-0">
+                        <button type="button" onclick="closeMobilePrintSettingsDrawer()" class="flex-1 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                            <span>Показать А4</span>
+                        </button>
+                        <button type="button" onclick="triggerPrint(); closeMobilePrintSettingsDrawer();" class="bg-amber-400 hover:bg-amber-300 text-stone-950 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>Печать</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Область интерактивного предварительного просмотра А4 -->
-            <div class="flex-1 bg-stone-200/70 p-4 md:p-6 overflow-y-auto" id="print-preview-container">
-                <!-- Динамические листы А4 -->
-            </div>
-
-            <!-- Подвал окна -->
-            <div class="p-3 bg-stone-50 border-t border-stone-200 flex justify-between items-center text-xs text-stone-500">
-                <span class="text-[11px]">💡 В окне печати браузера выберите <strong>Сохранить как PDF</strong> или ваш принтер (формат листа А4, масштаб 100%).</span>
-                <button type="button" onclick="closeModal('modal-print-guests')" class="bg-stone-200 hover:bg-stone-300 text-stone-700 font-bold px-4 py-2 rounded-xl transition">
-                    Закрыть
-                </button>
-            </div>
         </div>
     </div>
 

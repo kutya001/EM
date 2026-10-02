@@ -163,9 +163,15 @@ body {
     color: #18181b;
 }
 
+.a4-sheet-preview.a4-sheet-landscape {
+    max-width: 297mm;
+    min-height: 200mm;
+    padding: 8mm 12mm;
+}
+
 @media print {
     @page {
-        size: A4 portrait;
+        size: auto;
         margin: 8mm;
     }
     
@@ -207,6 +213,10 @@ body {
     .print-avoid-break {
         page-break-inside: avoid;
         break-inside: avoid;
+    }
+
+    .no-print {
+        display: none !important;
     }
 }
 
@@ -267,5 +277,28 @@ body {
 .invitation-cut-line-v {
     border-right: 1.5px dashed #cbd5e1;
     position: relative;
+}
+
+/* Мобильная адаптивность для А4 листов */
+@media (max-width: 767px) {
+    .a4-sheet-preview {
+        padding: 4mm 3mm !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: 0.75rem !important;
+        box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1) !important;
+    }
+}
+
+@keyframes slideUpDrawer {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.animate-slideUp {
+    animation: slideUpDrawer 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

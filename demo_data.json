@@ -48,7 +48,8 @@
     "venueName": "Ресторан Ала-Тоо",
     "venueLink": "https://2gis.kg/bishkek/firm/70000001019349887",
     "trackPhones": true,
-    "trackCategories": true
+    "trackCategories": true,
+    "invitationText": ""
   },
   "finance": {
     "expenseCategories": ["Аренда зала", "Банкет / Меню", "Оформление / Декор", "Ведущий / Шоу", "Фото и видео", "Полиграфия / Пригласительные", "Транспорт", "Прочее"],
