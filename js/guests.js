@@ -13,9 +13,9 @@ function switchGuestsViewMode(mode) {
         const btn = document.getElementById(`subtab-btn-${m}`);
         if (btn) {
             if (m === mode) {
-                btn.className = "guest-subtab-island flex-1 justify-center text-center py-2 px-1 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 bg-gradient-to-b from-emerald-800 to-emerald-950 text-white shadow-md border-b-2 border-emerald-950 active:scale-95";
+                btn.className = "guest-subtab-island flex-1 justify-center text-center py-2 px-1 md:py-1.5 md:px-3 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 bg-gradient-to-b from-emerald-800 to-emerald-950 text-white shadow-md border-b-2 border-emerald-950 active:scale-95";
             } else {
-                btn.className = "guest-subtab-island flex-1 justify-center text-center py-2 px-1 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 text-stone-600 bg-white/90 hover:text-stone-900 hover:bg-stone-50 shadow-xs border border-stone-200/80 border-b-2 border-b-stone-300 active:scale-95";
+                btn.className = "guest-subtab-island flex-1 justify-center text-center py-2 px-1 md:py-1.5 md:px-3 rounded-xl text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 text-stone-600 bg-white/90 hover:text-stone-900 hover:bg-stone-50 shadow-xs border border-stone-200/80 border-b-2 border-b-stone-300 active:scale-95";
             }
         }
     });

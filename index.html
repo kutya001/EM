@@ -11,6 +11,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- html2pdf.js for generating real PDF documents -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Шрифты Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -616,43 +618,47 @@
         <!-- ВКЛАДКА 1: ЖУРНАЛ ГОСТЕЙ -->
         <section id="tab-guests" class="tab-content hidden space-y-3 !mt-0">
             <!-- Sticky Subtabs and Filters Toggle (Floating Island + Compact) -->
-            <div class="sticky top-[54px] md:top-[48px] z-20 bg-transparent pointer-events-none pb-0.5 pt-0.5 -mx-2 px-2 md:-mx-4 md:px-4 -mt-2 -mb-2 border-none">
-                <div class="flex bg-white/95 backdrop-blur-md p-0.5 rounded-xl border border-stone-200/80 max-w-[340px] md:max-w-md mx-auto gap-0.5 shadow-md pointer-events-auto items-center">
+            <div class="sticky top-[54px] md:static md:top-auto z-20 bg-transparent pointer-events-none md:pointer-events-auto pb-0.5 pt-0.5 -mx-2 px-2 md:mx-0 md:px-0 md:py-0 -mt-2 -mb-2 md:my-0 border-none max-w-xl md:max-w-4xl mx-auto w-full">
+                <div class="flex bg-white/95 backdrop-blur-md p-1 md:p-1.5 rounded-xl md:rounded-2xl border border-stone-200/80 max-w-[340px] md:max-w-4xl mx-auto gap-0.5 md:gap-2 shadow-md md:shadow-xs pointer-events-auto items-center justify-between">
                     <!-- Суб-вкладки (На мобильных — объемные островки с иконками, на ПК — с названиями) -->
                     <div class="flex-1 flex gap-1">
-                        <button onclick="switchGuestsViewMode('list')" id="subtab-btn-list" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-emerald-800 text-white shadow-xs" title="Список гостей">
+                        <button onclick="switchGuestsViewMode('list')" id="subtab-btn-list" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-emerald-800 text-white shadow-xs" title="Список гостей">
                             <i data-lucide="list" class="w-4 h-4 shrink-0"></i>
                             <span class="hidden md:inline">Список</span>
                         </button>
-                        <button onclick="switchGuestsViewMode('spreadsheet')" id="subtab-btn-spreadsheet" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Таблица">
+                        <button onclick="switchGuestsViewMode('spreadsheet')" id="subtab-btn-spreadsheet" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Таблица">
                             <i data-lucide="table-2" class="w-4 h-4 shrink-0"></i>
                             <span class="hidden md:inline">Таблица</span>
                         </button>
-                        <button onclick="switchGuestsViewMode('tables')" id="subtab-btn-tables" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Столы">
+                        <button onclick="switchGuestsViewMode('tables')" id="subtab-btn-tables" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Столы">
                             <i data-lucide="armchair" class="w-4 h-4 shrink-0"></i>
                             <span class="hidden md:inline">Столы</span>
                         </button>
-                        <button onclick="switchGuestsViewMode('categories')" id="subtab-btn-categories" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Категории">
+                        <button onclick="switchGuestsViewMode('categories')" id="subtab-btn-categories" class="flex-1 justify-center text-center py-2 px-1.5 md:py-1.5 md:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 shadow-2xs" title="Категории">
                             <i data-lucide="tags" class="w-4 h-4 shrink-0"></i>
                             <span class="hidden md:inline">Категории</span>
                         </button>
                     </div>
                     
-                    <!-- Кнопка Фильтров с индикатором -->
-                    <button id="guests-filters-toggle-btn" onclick="toggleGuestsFiltersDrawer()" class="relative bg-stone-50 hover:bg-stone-200/60 p-1.5 rounded-lg border border-stone-200/40 active:scale-95 transition shrink-0 flex items-center justify-center h-7 w-7 ml-1 shadow-2xs" title="Фильтры и поиск">
-                        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-stone-600"></i>
-                        <span id="guests-filters-active-dot" class="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full hidden animate-pulse"></span>
-                    </button>
+                    <!-- Блок действий в шапке (Фильтры + Печать) -->
+                    <div class="flex items-center gap-1 md:gap-1.5">
+                        <!-- Кнопка Фильтров с индикатором -->
+                        <button id="guests-filters-toggle-btn" onclick="toggleGuestsFiltersDrawer()" class="relative bg-stone-50 hover:bg-stone-200/60 p-1.5 md:py-1.5 md:px-3 rounded-lg md:rounded-xl border border-stone-200/60 active:scale-95 transition shrink-0 flex items-center justify-center h-7 md:h-8 shadow-2xs text-stone-700" title="Фильтры и поиск">
+                            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-stone-600"></i>
+                            <span class="hidden md:inline text-xs font-bold text-stone-700 ml-1.5">Фильтры</span>
+                            <span id="guests-filters-active-dot" class="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full hidden animate-pulse"></span>
+                        </button>
 
-                    <!-- Кнопка Печати / Пригласительных -->
-                    <button onclick="openPrintModal('seating')" class="bg-stone-50 hover:bg-stone-200/60 p-1.5 rounded-lg border border-stone-200/40 active:scale-95 transition shrink-0 flex items-center justify-center h-7 w-7 shadow-2xs text-emerald-800" title="Печать списков рассадки и пригласительных (А4)">
-                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                    </button>
+                        <!-- Кнопка Печати / Пригласительных для мобильных -->
+                        <button onclick="openPrintModal('seating')" class="md:hidden bg-stone-50 hover:bg-stone-200/60 p-1.5 rounded-lg border border-stone-200/40 active:scale-95 transition shrink-0 flex items-center justify-center h-7 w-7 shadow-2xs text-emerald-800" title="Печать списков рассадки и пригласительных (А4)">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Выдвижные Фильтры и Поиск -->
-            <div id="guests-filters-drawer" class="hidden bg-white/95 border-b border-stone-200/80 p-3.5 space-y-3 shadow-xs rounded-2xl transition-all duration-300 max-w-xl md:max-w-4xl mx-auto w-full">
+            <div id="guests-filters-drawer" class="hidden bg-white/95 border border-stone-200/80 p-3.5 space-y-3 shadow-xs rounded-2xl transition-all duration-300 max-w-xl md:max-w-4xl mx-auto w-full">
                 <div class="relative">
                     <input type="text" id="search-input" placeholder="Поиск гостя по имени..." 
                            class="w-full bg-stone-50/50 border border-stone-200 rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-700">
@@ -671,32 +677,36 @@
             </div>
 
             <!-- Панель действий: Количество, Выбрать Всех и Печать А4 -->
-            <div id="guests-action-bar" class="flex items-center justify-between bg-white/80 p-2.5 rounded-xl border border-stone-200/40 shadow-2xs text-[11px] font-bold text-stone-500 max-w-xl md:max-w-4xl mx-auto w-full px-3">
-                <div class="flex items-center gap-1.5 select-none">
+            <div id="guests-action-bar" class="flex items-center justify-between bg-white/90 md:bg-white p-2.5 md:p-3 rounded-xl md:rounded-2xl border border-stone-200/60 md:border-stone-200/80 shadow-2xs text-[11px] md:text-xs font-bold text-stone-500 max-w-xl md:max-w-4xl mx-auto w-full px-3 md:px-4 md:mt-2">
+                <div class="flex items-center gap-2 select-none">
                     <input type="checkbox" id="select-all-cb" onchange="toggleSelectAllVisible()" 
-                           class="w-4 h-4 text-emerald-800 bg-white border-stone-300 rounded focus:ring-emerald-700">
-                    <label for="select-all-cb" class="cursor-pointer">Выбрать всех</label>
+                           class="w-4 h-4 text-emerald-800 bg-white border-stone-300 rounded focus:ring-emerald-700 cursor-pointer">
+                    <label for="select-all-cb" class="cursor-pointer font-bold text-stone-700 hover:text-stone-900 transition">Выбрать всех</label>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="button" onclick="openPrintModal('seating')" class="bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] md:text-xs font-bold py-1.5 px-2.5 rounded-lg border border-stone-200/70 shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать списков рассадки для А4">
+                    <button type="button" onclick="openPrintModal('seating')" class="bg-stone-100 hover:bg-stone-200 text-stone-800 text-[10px] md:text-xs font-bold py-1.5 px-2.5 md:py-2 md:px-3 rounded-lg md:rounded-xl border border-stone-200/70 shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать списков рассадки для А4">
                         <i data-lucide="printer" class="w-3.5 h-3.5 text-emerald-800"></i>
                         <span>Печать А4</span>
                     </button>
-                    <button type="button" onclick="openPrintModal('invitation_personal')" class="bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] md:text-xs font-bold py-1.5 px-2.5 rounded-lg border border-amber-200/70 shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать персональных пригласительных билетов (А4)">
+                    <button type="button" onclick="openPrintModal('invitation_personal')" class="bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] md:text-xs font-bold py-1.5 px-2.5 md:py-2 md:px-3 rounded-lg md:rounded-xl border border-amber-200/70 shadow-2xs flex items-center gap-1.5 transition active:scale-95" title="Печать персональных пригласительных билетов (А4)">
                         <i data-lucide="mail" class="w-3.5 h-3.5 text-amber-600"></i>
                         <span>Билеты (А4)</span>
                     </button>
-                    <div class="shrink-0 text-stone-600">
-                        Показано: <span id="total-guests-count" class="font-extrabold text-stone-850">0</span>
+                    <div class="shrink-0 text-stone-600 md:text-stone-700 md:bg-stone-100/90 md:px-2.5 md:py-1.5 md:rounded-xl md:border md:border-stone-200/60 font-semibold">
+                        Показано: <span id="total-guests-count" class="font-extrabold text-stone-900">0</span>
                     </div>
+                    <!-- Кнопка создания гостя прямо в панели на ПК -->
+                    <button type="button" onclick="openGuestModal()" class="hidden md:flex bg-emerald-800 hover:bg-emerald-700 active:scale-95 transition text-white text-xs font-bold py-2 px-3.5 rounded-xl shadow-xs items-center gap-1.5 ml-1">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>Новый гость</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Создать / Новый гость кнопка (Адаптивный FAB) -->
-            <div class="flex justify-end max-w-xl md:max-w-4xl mx-auto w-full md:static">
-                <button onclick="openGuestModal()" class="fixed md:static bottom-20 right-4 z-40 w-12 md:w-auto h-12 md:h-auto rounded-full md:rounded-xl bg-emerald-800 hover:bg-emerald-700 active:scale-95 transition text-white shadow-lg md:shadow-xs flex items-center justify-center md:px-3.5 md:py-2 text-xs font-bold gap-1.5 animate-fadeIn">
-                    <i data-lucide="user-plus" class="w-5 h-5 md:w-4 md:h-4 animate-pulse"></i>
-                    <span class="hidden md:inline">Новый гость</span>
+            <!-- Создать / Новый гость кнопка (Адаптивный FAB для мобильных) -->
+            <div class="flex justify-end max-w-xl md:max-w-4xl mx-auto w-full md:hidden">
+                <button onclick="openGuestModal()" class="fixed bottom-20 right-4 z-40 w-12 h-12 rounded-full bg-emerald-800 hover:bg-emerald-700 active:scale-95 transition text-white shadow-lg flex items-center justify-center animate-fadeIn" title="Добавить гостя">
+                    <i data-lucide="user-plus" class="w-5 h-5 animate-pulse"></i>
                 </button>
             </div>
 
