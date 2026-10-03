@@ -2489,18 +2489,8 @@
                                               placeholder="Введите текст приглашения..."></textarea>
                                 </div>
 
-                                <div class="pt-1 border-t border-stone-150 space-y-2">
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <button type="button" onclick="downloadCurrentInvitationImage()" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold py-2 px-2.5 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 active:scale-95" title="Скачать бланк как фото (PNG)">
-                                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-                                            <span>Скачать фото</span>
-                                        </button>
-                                        <button type="button" onclick="downloadCurrentInvitationPDF()" class="bg-emerald-900 text-amber-300 hover:text-white border border-emerald-700 text-xs font-bold py-2 px-2.5 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 active:scale-95" title="Скачать файл PDF">
-                                            <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
-                                            <span>Скачать PDF</span>
-                                        </button>
-                                    </div>
-                                    <button type="button" onclick="sendWhatsAppGeneralInvitationPDF()" class="w-full bg-emerald-900/90 hover:bg-emerald-800 active:scale-95 text-amber-300 border border-emerald-700/80 text-xs font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-2xs">
+                                <div class="pt-1 border-t border-stone-150">
+                                    <button type="button" onclick="sendWhatsAppGeneralInvitationPDF()" class="w-full bg-emerald-900/90 hover:bg-emerald-800 active:scale-95 text-amber-300 border border-emerald-700/80 text-xs font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-2xs">
                                         <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-400"></i>
                                         <span>Отправить этот бланк в WhatsApp (PDF)</span>
                                     </button>
@@ -2567,23 +2557,30 @@
                                 </div>
                             </div>
 
-                            <!-- Быстрые кнопки сохранения внизу сайдбара ПК -->
-                            <div class="hidden md:block pt-2 space-y-2">
-                                <div class="grid grid-cols-2 gap-2">
-                                    <button type="button" onclick="downloadCurrentInvitationImage()" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold py-2.5 px-2 rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition active:scale-95" title="Скачать пригласительное как фото (PNG)">
-                                        <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-                                        <span>Скачать фото</span>
-                                    </button>
-                                    <button type="button" onclick="downloadCurrentInvitationPDF()" class="bg-emerald-900 text-amber-300 hover:text-white border border-emerald-700/80 text-xs font-bold py-2.5 px-2 rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition active:scale-95" title="Скачать файл PDF">
-                                        <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
-                                        <span>Скачать PDF</span>
-                                    </button>
+                            <!-- Единая скомпонованная панель действий и экспорта (ПК) -->
+                            <div class="hidden md:block pt-3 border-t border-stone-250 space-y-2.5 mt-1 bg-stone-50">
+                                <div class="flex items-center justify-between text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                                    <span>Экспорт и печать:</span>
+                                    <span class="text-emerald-800 font-mono text-[9px] bg-emerald-100/70 border border-emerald-300 px-2 py-0.5 rounded-md">Формат А4</span>
                                 </div>
-                                <button type="button" onclick="triggerPrint()" class="w-full bg-emerald-800 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition">
-                                    <i data-lucide="printer" class="w-4 h-4"></i>
+
+                                <!-- Основная кнопка печати (акцентная) -->
+                                <button type="button" onclick="triggerPrint()" class="w-full bg-emerald-800 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 transition cursor-pointer">
+                                    <i data-lucide="printer" class="w-4 h-4 text-amber-300"></i>
                                     <span>Распечатать / Сохранить в PDF</span>
                                 </button>
-                                <span class="text-[10px] text-stone-400 text-center block mt-1">Ориентация: Альбомная А4 (горизонтально)</span>
+
+                                <!-- Экспорт файлов (PDF и Фото) -->
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button type="button" onclick="downloadCurrentInvitationPDF()" class="bg-white hover:bg-stone-100 text-stone-900 border border-stone-300 text-xs font-bold py-2.5 px-2 rounded-xl shadow-2xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer" title="Скачать как 1-страничный PDF файл">
+                                        <i data-lucide="file-down" class="w-4 h-4 text-emerald-800"></i>
+                                        <span>Скачать PDF</span>
+                                    </button>
+                                    <button type="button" onclick="downloadCurrentInvitationImage()" id="btn-sidebar-download-photo" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-xs font-bold py-2.5 px-2 rounded-xl shadow-2xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer" title="Скачать как изображение PNG высокого разрешения">
+                                        <i data-lucide="camera" class="w-4 h-4"></i>
+                                        <span>Скачать фото</span>
+                                    </button>
+                                </div>
                             </div>
 
                         </div>
@@ -2599,15 +2596,7 @@
                             <span id="preview-sheet-title">Предпросмотр: Горизонтальный лист А4 (297×210 мм, 1 пригласительное)</span>
                         </span>
                         <div class="flex items-center gap-1.5">
-                            <button type="button" onclick="downloadCurrentInvitationImage()" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-[10px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать фото (PNG)">
-                                <i data-lucide="camera" class="w-3 h-3"></i>
-                                <span>Скачать фото</span>
-                            </button>
-                            <button type="button" onclick="downloadCurrentInvitationPDF()" class="bg-emerald-800 hover:bg-emerald-700 text-white text-[10px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать PDF">
-                                <i data-lucide="file-down" class="w-3 h-3"></i>
-                                <span>Скачать PDF</span>
-                            </button>
-                            <button type="button" onclick="togglePrintZoomFit()" id="btn-print-zoom" class="bg-white/90 hover:bg-white text-stone-700 border border-stone-250 text-[10px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs">
+                            <button type="button" onclick="togglePrintZoomFit()" id="btn-print-zoom" class="bg-white/90 hover:bg-white text-stone-700 border border-stone-250 text-[10px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95">
                                 <i data-lucide="maximize-2" class="w-3 h-3 text-stone-500"></i>
                                 <span id="btn-print-zoom-text">По ширине</span>
                             </button>

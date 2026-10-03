@@ -1492,26 +1492,24 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
 
         const fileSheetName = isDedicatedTableMode ? `Стол_${chunk[0]?.number || (pageIndex + 1)}` : `Рассадка_Лист_${pageIndex + 1}`;
 
+        const sheetToolbarHtml = (totalPages > 1) ? `
+                    <!-- Панель нумерации листов при многостраничной рассадке (только на экране) -->
+                    <div class="no-print flex justify-between items-center bg-stone-150/80 border border-stone-250 rounded-xl px-3 py-1.5 mb-2.5 text-xs select-none gap-2">
+                        <span class="font-bold text-stone-700 flex items-center gap-1.5 truncate">
+                            <span class="bg-emerald-800 text-white text-[10px] font-mono px-2 py-0.5 rounded-md shrink-0">Лист ${pageIndex + 1} из ${totalPages}</span>
+                            <span class="truncate">${isDedicatedTableMode ? getTableName(chunk[0]) : `Столы: ${chunk.map(t => '#' + t.number).join(', ')}`}</span>
+                        </span>
+                        <button type="button" onclick="downloadCurrentInvitationPDF(document.getElementById('seating-page-sheet-${pageIndex}'), '${fileSheetName}.pdf')" class="bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95 shrink-0" title="Скачать этот лист в PDF">
+                            <i data-lucide="file-down" class="w-3.5 h-3.5 text-emerald-800"></i>
+                            <span>PDF листа</span>
+                        </button>
+                    </div>
+        ` : '';
+
         htmlPages += `
             <div id="seating-page-sheet-${pageIndex}" class="a4-sheet-preview print-page-sheet flex flex-col justify-between">
                 <div>
-                    <!-- Панель быстрых действий на листе стола (только на экране) -->
-                    <div class="no-print flex flex-wrap justify-between items-center bg-stone-100/90 border border-stone-250 rounded-xl px-3 py-1.5 mb-2.5 text-xs select-none gap-2">
-                        <span class="font-bold text-stone-700 flex items-center gap-1.5">
-                            <span class="bg-emerald-800 text-white text-[10px] font-mono px-2 py-0.5 rounded-md">Лист ${pageIndex + 1} из ${totalPages}</span>
-                            <span>${isDedicatedTableMode ? getTableName(chunk[0]) : `Столы: ${chunk.map(t => '#' + t.number).join(', ')}`}</span>
-                        </span>
-                        <div class="flex items-center gap-1.5">
-                            <button type="button" onclick="downloadCurrentInvitationPDF(document.getElementById('seating-page-sheet-${pageIndex}'), '${fileSheetName}.pdf')" class="bg-emerald-800 hover:bg-emerald-700 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать этот лист в PDF">
-                                <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
-                                <span>Скачать PDF</span>
-                            </button>
-                            <button type="button" onclick="triggerPrint()" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Печать">
-                                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                                <span>Печать</span>
-                            </button>
-                        </div>
-                    </div>
+                    ${sheetToolbarHtml}
                     ${pageHeaderHtml}
                     ${tablesHtml}
                 </div>
@@ -1812,32 +1810,31 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea, invitat
         const safeGuestName = (card.isPersonal && card.name) ? card.name.replace(/[\\/:*?"<>|]/g, '_') : 'Общее';
         const fileBaseName = `Пригласительное_${safeGuestName}`;
 
-        htmlPages += `
-            <div id="inv-page-sheet-${pageIdx}" class="a4-sheet-preview a4-sheet-landscape print-page-sheet flex flex-col justify-between relative group" style="width: 297mm; max-width: 297mm; min-height: 200mm; max-height: 210mm; aspect-ratio: 297/210; box-sizing: border-box; overflow: hidden; padding: 6mm 8mm;">
-                <!-- Верхняя компактная панель быстрых действий на листе (только на экране) -->
-                <div class="no-print flex flex-wrap justify-between items-center bg-stone-100/90 border border-stone-250 rounded-xl px-3 py-1.5 mb-2.5 text-xs select-none gap-2">
-                    <span class="font-bold text-stone-700 flex items-center gap-1.5">
-                        <span class="bg-emerald-800 text-white text-[10px] font-mono px-2 py-0.5 rounded-md">Лист ${pageIdx + 1} из ${guestCardsData.length}</span>
-                        <span class="truncate max-w-[200px] sm:max-w-xs">${card.isPersonal && card.name ? escapeHtml(card.name) : 'Общий бланк билета'}</span>
-                        <span class="text-[10px] text-amber-800 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-md">А4 Горизонтально</span>
+        const invToolbarHtml = (guestCardsData.length > 1) ? `
+                <!-- Панель нумерации при печати пачки персональных билетов (только на экране) -->
+                <div class="no-print flex justify-between items-center bg-stone-150/80 border border-stone-250 rounded-xl px-3 py-1.5 mb-2.5 text-xs select-none gap-2">
+                    <span class="font-bold text-stone-700 flex items-center gap-1.5 truncate">
+                        <span class="bg-emerald-800 text-white text-[10px] font-mono px-2 py-0.5 rounded-md shrink-0">Билет ${pageIdx + 1} из ${guestCardsData.length}</span>
+                        <span class="truncate font-extrabold text-stone-900">${card.name ? escapeHtml(card.name) : 'Гость'}</span>
                     </span>
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" onclick="downloadCurrentInvitationImage(document.getElementById('inv-page-sheet-${pageIdx}'), '${fileBaseName}.png')" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать этот лист как фото (PNG)">
-                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-                            <span class="hidden sm:inline">Скачать фото</span>
-                        </button>
-                        <button type="button" onclick="downloadCurrentInvitationPDF(document.getElementById('inv-page-sheet-${pageIdx}'), '${fileBaseName}.pdf')" class="bg-emerald-800 hover:bg-emerald-700 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать этот лист в PDF (со ссылкой на место)">
-                            <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
-                            <span class="hidden sm:inline">Скачать PDF</span>
-                        </button>
+                    <div class="flex items-center gap-1.5 shrink-0">
                         ${card.isPersonal && card.id ? `
-                        <button type="button" onclick="sendWhatsAppPersonalInvitation('${card.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Отправить гостю в WhatsApp">
+                        <button type="button" onclick="sendWhatsAppPersonalInvitation('${card.id}')" class="bg-emerald-700 hover:bg-emerald-600 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Отправить в WhatsApp">
                             <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-300"></i>
-                            <span class="hidden sm:inline">WhatsApp</span>
+                            <span>WhatsApp</span>
                         </button>
                         ` : ''}
+                        <button type="button" onclick="downloadCurrentInvitationPDF(document.getElementById('inv-page-sheet-${pageIdx}'), '${fileBaseName}.pdf')" class="bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать этот билет в PDF">
+                            <i data-lucide="file-down" class="w-3.5 h-3.5 text-emerald-800"></i>
+                            <span>PDF билета</span>
+                        </button>
                     </div>
                 </div>
+        ` : '';
+
+        htmlPages += `
+            <div id="inv-page-sheet-${pageIdx}" class="a4-sheet-preview a4-sheet-landscape print-page-sheet flex flex-col justify-between relative group" style="width: 297mm; max-width: 297mm; min-height: 200mm; max-height: 210mm; aspect-ratio: 297/210; box-sizing: border-box; overflow: hidden; padding: 6mm 8mm;">
+                ${invToolbarHtml}
 
                 <!-- Роскошный пригласительный билет на полный горизонтальный А4 -->
                 <div class="flex-1 flex flex-col justify-between">
