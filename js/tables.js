@@ -43,10 +43,13 @@ function renderTables() {
                     <span class="text-[10px] font-bold bg-stone-100 text-stone-700 rounded-lg px-2 py-1 cursor-default">
                         ${seated} / ${table.capacity}
                     </span>
-                    <button onclick="openTableModal('${table.id}')" class="text-stone-300 hover:text-emerald-800 p-1 rounded-lg transition active:scale-90">
+                    <button onclick="openPrintModalForTable('${table.id}')" class="text-stone-300 hover:text-amber-500 p-1 rounded-lg transition active:scale-90" title="Печать этого стола отдельно (А4)">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="openTableModal('${table.id}')" class="text-stone-300 hover:text-emerald-800 p-1 rounded-lg transition active:scale-90" title="Редактировать">
                         <i data-lucide="edit-3" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="deleteTable('${table.id}')" class="text-stone-300 hover:text-red-600 p-1 rounded-lg transition active:scale-90">
+                    <button onclick="deleteTable('${table.id}')" class="text-stone-300 hover:text-red-600 p-1 rounded-lg transition active:scale-90" title="Удалить">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -535,8 +538,19 @@ function openTableDetailsModal(tableId) {
         statusEl.className = "font-bold text-xs text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100";
     }
     
+    const printBtn = document.getElementById('btn-print-detail-table');
+    if (printBtn) {
+        printBtn.onclick = () => {
+            closeModal('modal-table-details');
+            if (typeof openPrintModalForTable === 'function') {
+                openPrintModalForTable(tableId);
+            }
+        };
+    }
+
     renderTableDetailsGuests(tableId);
     openModal('modal-table-details');
+    if (window.lucide) lucide.createIcons();
 }
 
 function renderTableDetailsGuests(tableId) {

@@ -172,6 +172,8 @@ function importFromJSON(e) {
                 initProfileUI();
                 centerCanvasViewport();
                 renderAll();
+                closeModal('modal-onboarding');
+                lucide.createIcons();
                 showToast('База данных успешно импортирована из JSON!');
             } else {
                 showToast('Ошибка: Неверная структура JSON!');

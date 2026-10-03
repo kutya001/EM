@@ -656,3 +656,100 @@ function drawRoundedRectCtx(c, x, y, width, height, radius, fill, stroke) {
     if (fill) c.fill();
     if (stroke) c.stroke();
 }
+
+// ===== УМНАЯ И СТРУКТУРИРОВАННАЯ РАССТАНОВКА СТОЛОВ ОТ СЦЕНЫ =====
+function autoArrangeTables(mode = 'smart') {
+    if (!state.tables || state.tables.length === 0) {
+        showToast('В зале пока нет столов для расстановки');
+        return;
+    }
+
+    // Сортируем столы по их номеру, чтобы сохранять логический порядок от сцены
+    const sorted = [...state.tables].sort((a, b) => (a.number || 0) - (b.number || 0));
+    const count = sorted.length;
+
+    let numRows = 2;
+    if (mode === 'rows-2') {
+        numRows = 2;
+    } else if (mode === 'rows-3') {
+        numRows = 3;
+    } else {
+        // Умный адаптивный расчет рядов:
+        if (count <= 4) {
+            numRows = 2;
+        } else if (count <= 9) {
+            numRows = (count >= 7) ? 3 : 2;
+        } else if (count <= 15) {
+            numRows = 3;
+        } else {
+            numRows = 4;
+        }
+    }
+
+    // Президиум (сцена) находится в (X: 400, Y: 40), ширина 240px
+    // Центральный проход (walkway): коридор по центру X = 400 шириной ~160px
+    const startY = (numRows >= 4) ? 160 : 180;
+    const rowGap = (numRows === 2) ? 230 : ((numRows === 3) ? 175 : 140);
+
+    const tablesPerRow = Math.ceil(count / numRows);
+    let tableIndex = 0;
+
+    for (let r = 0; r < numRows; r++) {
+        const remaining = count - tableIndex;
+        if (remaining <= 0) break;
+
+        const inThisRow = Math.min(tablesPerRow, remaining);
+        const y = startY + r * rowGap;
+
+        // Симметрично делим столы в ряду на Левое и Правое крыло
+        // оставляя центральный проход к сцене открытым
+        const leftCount = Math.ceil(inThisRow / 2);
+        const rightCount = inThisRow - leftCount;
+
+        // Левое крыло (X < 400, от 140 до 310)
+        for (let i = 0; i < leftCount; i++) {
+            const t = sorted[tableIndex++];
+            let x;
+            if (leftCount === 1) {
+                x = 230;
+            } else {
+                const step = (310 - 140) / (leftCount - 1);
+                x = Math.round(140 + i * step);
+            }
+            const targetTable = state.tables.find(tbl => tbl.id === t.id);
+            if (targetTable) {
+                targetTable.x = x;
+                targetTable.y = y;
+            }
+        }
+
+        // Правое крыло (X > 400, от 490 до 660)
+        for (let j = 0; j < rightCount; j++) {
+            const t = sorted[tableIndex++];
+            let x;
+            if (rightCount === 1) {
+                x = 570;
+            } else {
+                const step = (660 - 490) / (rightCount - 1);
+                x = Math.round(490 + j * step);
+            }
+            const targetTable = state.tables.find(tbl => tbl.id === t.id);
+            if (targetTable) {
+                targetTable.x = x;
+                targetTable.y = y;
+            }
+        }
+    }
+
+    saveState();
+    centerCanvasViewport();
+    drawCanvas();
+
+    if (mode === 'rows-2') {
+        showToast('📐 Столы расставлены в 2 ряда от сцены');
+    } else if (mode === 'rows-3') {
+        showToast('📐 Столы расставлены в 3 ряда от сцены');
+    } else {
+        showToast('✨ Выполнена умная расстановка зала с центральным проходом');
+    }
+}

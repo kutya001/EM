@@ -165,14 +165,18 @@ body {
 
 .a4-sheet-preview.a4-sheet-landscape {
     max-width: 297mm;
+    width: 100%;
     min-height: 200mm;
-    padding: 8mm 12mm;
+    aspect-ratio: 297 / 210;
+    padding: 6mm 8mm;
+    margin: 0 auto 1.5rem auto;
+    box-sizing: border-box;
 }
 
 @media print {
     @page {
         size: auto;
-        margin: 8mm;
+        margin: 6mm;
     }
     
     html, body {
@@ -182,6 +186,10 @@ body {
         padding: 0 !important;
         width: 100% !important;
         font-family: 'Inter', -apple-system, sans-serif !important;
+    }
+
+    body.print-landscape-mode {
+        width: 297mm !important;
     }
 
     body > *:not(#print-output-area) {
@@ -196,6 +204,10 @@ body {
         background: #ffffff !important;
     }
 
+    body.print-landscape-mode #print-output-area {
+        width: 297mm !important;
+    }
+
     .print-page-sheet {
         page-break-after: always;
         break-after: page;
@@ -203,6 +215,12 @@ body {
         box-sizing: border-box;
         padding: 4mm 0;
         background: #ffffff !important;
+    }
+
+    body.print-landscape-mode .print-page-sheet {
+        width: 297mm !important;
+        min-height: 200mm !important;
+        padding: 4mm 6mm !important;
     }
 
     .print-page-sheet:last-child {
@@ -222,20 +240,35 @@ body {
 
 /* ===== Стили для Пригласительных (Invitations) ===== */
 .invitation-border-luxury {
-    border: 2px solid #b45309; /* amber-700 */
+    border: 3px double #b45309; /* amber-700 */
     position: relative;
-    padding: 1.5rem;
+    padding: 1.25rem;
     background-color: #fffdfa;
+    box-shadow: 0 4px 20px -2px rgba(180, 83, 9, 0.08);
 }
 
 .invitation-border-inner {
     border: 1px solid #d97706; /* amber-600 */
-    padding: 1rem;
+    padding: 1.25rem 1.5rem;
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     position: relative;
+    background: radial-gradient(circle at center, #ffffff 60%, #fffdf8 100%);
+}
+
+.venue-pdf-link {
+    color: #065f46 !important; /* emerald-800 */
+    text-decoration: underline !important;
+    text-decoration-color: #10b981 !important;
+    text-underline-offset: 3px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+}
+
+.venue-pdf-link:hover {
+    color: #047857 !important;
 }
 
 .invitation-corner {

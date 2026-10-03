@@ -859,6 +859,7 @@ function openPrintModal(initialMode = 'seating', initialRecipient = null) {
     if (persTplSelect) persTplSelect.value = tKey;
 
     updatePrintGuestSelect(initialRecipient);
+    updatePrintTableSelect();
 
     const filterSelect = document.getElementById('print-inv-pers-filter');
     if (initialRecipient && initialRecipient !== 'general' && initialRecipient !== 'all_personal') {
@@ -872,6 +873,41 @@ function openPrintModal(initialMode = 'seating', initialRecipient = null) {
     applyPrintModeUI();
     updatePrintPreview();
     openModal('modal-print-guests');
+}
+
+function updatePrintTableSelect(selectedTableId = null) {
+    const sel = document.getElementById('print-seating-table-filter');
+    if (!sel) return;
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="all">Все столы (согласно сетке)</option>';
+
+    if (state.tables && state.tables.length > 0) {
+        const sorted = [...state.tables].sort((a, b) => (a.number || 0) - (b.number || 0));
+        sorted.forEach(t => {
+            const seated = state.guests.filter(g => g.tableId === t.id).length;
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.innerText = `Стол №${t.number}${t.name ? ` «${t.name}»` : ''} (${seated}/${t.capacity} мест)`;
+            if (selectedTableId && t.id === selectedTableId) {
+                opt.selected = true;
+            } else if (!selectedTableId && currentVal === t.id) {
+                opt.selected = true;
+            }
+            sel.appendChild(opt);
+        });
+    }
+}
+
+function openPrintModalForTable(tableId) {
+    openPrintModal('seating');
+    setTimeout(() => {
+        updatePrintTableSelect(tableId);
+        const sel = document.getElementById('print-seating-table-filter');
+        if (sel) {
+            sel.value = tableId;
+        }
+        updatePrintPreview();
+    }, 50);
 }
 
 function updatePrintGuestSelect(selectedGuestId = null) {
@@ -951,14 +987,14 @@ function applyPrintModeUI() {
         if (invGenBtn) invGenBtn.className = "py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 bg-emerald-800 text-white shadow-xs";
         if (mobileInvGenBtn) mobileInvGenBtn.className = "px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-2xs";
         if (invGenToolbar) invGenToolbar.classList.remove('hidden');
-        if (pcHeading) pcHeading.innerText = "Центр печати: Общий пригласительный билет (Формат А4)";
-        if (sheetTitle) sheetTitle.innerText = "Общий пригласительный билет (А4)";
+        if (pcHeading) pcHeading.innerText = "Центр печати: Общий пригласительный билет (Формат А4 Альбомный, 1 на лист)";
+        if (sheetTitle) sheetTitle.innerText = "Общий пригласительный билет (А4 Альбомный, 1 на лист)";
     } else {
         if (invPersBtn) invPersBtn.className = "py-1.5 px-1 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 bg-emerald-800 text-white shadow-xs";
         if (mobileInvPersBtn) mobileInvPersBtn.className = "px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1 bg-emerald-800 text-white shadow-2xs";
         if (invPersToolbar) invPersToolbar.classList.remove('hidden');
-        if (pcHeading) pcHeading.innerText = "Центр печати: Персональные пригласительные карточки (Формат А4)";
-        if (sheetTitle) sheetTitle.innerText = "Персональные карточки гостей (А4)";
+        if (pcHeading) pcHeading.innerText = "Центр печати: Персональные пригласительные билеты (Формат А4 Альбомный, 1 на лист)";
+        if (sheetTitle) sheetTitle.innerText = "Персональные билеты гостей (А4 Альбомный, 1 на лист)";
     }
     lucide.createIcons();
 }
@@ -1097,6 +1133,11 @@ function getPrintEventInfo() {
     const eventVenueFormatted = venueInputVal || p.venueName?.trim() || 'Место проведения уточняется';
     const eventHostsFormatted = hostsInputVal || p.hosts || '';
 
+    let venueLink = p.venueLink ? p.venueLink.trim() : '';
+    if (!venueLink && eventVenueFormatted && eventVenueFormatted !== 'Место проведения уточняется') {
+        venueLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventVenueFormatted)}`;
+    }
+
     return {
         eventTitle,
         eventType,
@@ -1104,6 +1145,7 @@ function getPrintEventInfo() {
         eventTimeFormatted,
         eventVenueFormatted,
         eventHostsFormatted,
+        venueLink,
         showHdrName,
         showHdrDate,
         showHdrTime,
@@ -1201,39 +1243,56 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
         printTablesPerPage = parseInt(select.value) || 4;
     }
 
+    const tableFilter = document.getElementById('print-seating-table-filter')?.value || 'all';
     const optCheckin = document.getElementById('print-opt-checkin')?.checked !== false;
     const optPhone = document.getElementById('print-opt-phone')?.checked !== false && state.profile?.trackPhones !== false;
     const optCategory = document.getElementById('print-opt-category')?.checked !== false && state.profile?.trackCategories !== false;
     const optEmptySeats = document.getElementById('print-opt-empty-seats')?.checked !== false;
+    const optWaiterNotes = document.getElementById('print-opt-waiter-notes')?.checked !== false;
     const optUnassigned = document.getElementById('print-opt-unassigned')?.checked !== false;
 
     const info = getPrintEventInfo();
     const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, eventHostsFormatted, showHdrName, showHdrDate, showHdrTime, showHdrVenue, showHdrHosts, showHdrFooter } = info;
 
     // Сортировка столов по номерам
-    const sortedTables = [...state.tables].sort((a, b) => (a.number || 0) - (b.number || 0));
+    let sortedTables = [...state.tables].sort((a, b) => (a.number || 0) - (b.number || 0));
 
-    // Разбиваем столы на листы по выбранному количеству (по умолчанию 4 стола на А4)
-    const chunks = [];
-    for (let i = 0; i < sortedTables.length; i += printTablesPerPage) {
-        chunks.push(sortedTables.slice(i, i + printTablesPerPage));
+    const isSingleTableFiltered = (tableFilter !== 'all');
+    if (isSingleTableFiltered) {
+        const found = sortedTables.find(t => t.id === tableFilter);
+        sortedTables = found ? [found] : sortedTables;
     }
 
-    const unassignedGuests = state.guests.filter(g => !g.tableId || g.tableId === 'none');
-    const totalPages = Math.max(1, chunks.length + ((optUnassigned && unassignedGuests.length > 0) ? 1 : 0));
+    const isDedicatedTableMode = isSingleTableFiltered || (printTablesPerPage === 1);
+
+    const tppContainer = document.getElementById('print-tables-per-page-container');
+    if (tppContainer) {
+        tppContainer.style.display = isSingleTableFiltered ? 'none' : 'block';
+    }
+
+    // Разбиваем столы на листы по выбранному количеству
+    const chunks = [];
+    if (isDedicatedTableMode) {
+        sortedTables.forEach(t => chunks.push([t]));
+    } else {
+        for (let i = 0; i < sortedTables.length; i += printTablesPerPage) {
+            chunks.push(sortedTables.slice(i, i + printTablesPerPage));
+        }
+    }
+
+    const unassignedGuests = (!isSingleTableFiltered && optUnassigned) 
+        ? state.guests.filter(g => !g.tableId || g.tableId === 'none')
+        : [];
+    const totalPages = Math.max(1, chunks.length + (unassignedGuests.length > 0 ? 1 : 0));
 
     let htmlPages = '';
 
-    // Генерация страниц со столами
     chunks.forEach((chunk, pageIndex) => {
-        let gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4';
-        if (printTablesPerPage === 1) gridClass = 'grid grid-cols-1 gap-4';
-        else if (printTablesPerPage === 2) gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4';
-        else if (printTablesPerPage === 4) gridClass = 'grid grid-cols-2 gap-3.5';
-        else if (printTablesPerPage === 6) gridClass = 'grid grid-cols-2 gap-2 text-[10px]';
-
         let tablesHtml = '';
-        chunk.forEach(table => {
+
+        if (isDedicatedTableMode) {
+            // === РЕЖИМ ПЕЧАТИ СТОЛА ОТДЕЛЬНО (VIP КАРТОЧКА СТОЛА НА ЛИСТ А4) ===
+            const table = chunk[0];
             const tableGuests = state.guests.filter(g => g.tableId === table.id);
             const cat = state.categories.find(c => c.id === table.categoryId);
 
@@ -1242,60 +1301,168 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
                 const gCat = state.categories.find(c => c.id === g.categoryId);
                 rowsHtml += `
                     <tr class="border-b border-stone-200">
-                        <td class="py-1 px-1.5 font-bold text-center w-6 text-stone-500">${idx + 1}</td>
-                        <td class="py-1 px-1.5 font-bold text-stone-900">${escapeHtml(g.name)}</td>
-                        ${optCategory ? `<td class="py-1 px-1.5 text-stone-500 text-[10px]">${gCat ? escapeHtml(gCat.name) : ''}</td>` : ''}
-                        ${optPhone ? `<td class="py-1 px-1.5 font-mono text-[10px] text-stone-600">${escapeHtml(g.phone || '')}</td>` : ''}
-                        ${optCheckin ? `<td class="py-1 px-1.5 text-center w-12 border-l border-stone-200"><span class="inline-block w-3.5 h-3.5 border border-stone-400 rounded-xs"></span></td>` : ''}
+                        <td class="py-2 px-2 font-bold text-center w-8 text-stone-600 bg-stone-50 font-mono">${idx + 1}</td>
+                        <td class="py-2 px-3 font-extrabold text-stone-900 text-sm">${escapeHtml(g.name)}</td>
+                        ${optCategory ? `<td class="py-2 px-2 text-stone-600 text-xs font-semibold">${gCat ? escapeHtml(gCat.name) : '—'}</td>` : ''}
+                        ${optPhone ? `<td class="py-2 px-2 font-mono text-xs text-stone-700">${escapeHtml(g.phone || '—')}</td>` : ''}
+                        ${optCheckin ? `<td class="py-2 px-2 text-center w-16 border-l border-stone-200"><span class="inline-block w-4 h-4 border-2 border-stone-400 rounded-md"></span></td>` : ''}
                     </tr>
                 `;
             });
 
-            // Дозаполнение пустыми местами до лимита стола
             if (optEmptySeats && tableGuests.length < table.capacity) {
                 const emptyCount = table.capacity - tableGuests.length;
                 for (let e = 0; e < emptyCount; e++) {
                     const seatNum = tableGuests.length + e + 1;
                     rowsHtml += `
-                        <tr class="border-b border-stone-200/50 bg-stone-50/40">
-                            <td class="py-1 px-1.5 text-center w-6 text-stone-300 font-mono">${seatNum}</td>
-                            <td class="py-1 px-1.5 text-stone-300 italic text-[11px]">[ Свободное место ]</td>
-                            ${optCategory ? `<td></td>` : ''}
-                            ${optPhone ? `<td></td>` : ''}
-                            ${optCheckin ? `<td class="border-l border-stone-200"></td>` : ''}
+                        <tr class="border-b border-stone-200/60 bg-stone-50/50">
+                            <td class="py-2 px-2 text-center w-8 text-stone-400 font-mono">${seatNum}</td>
+                            <td class="py-2 px-3 text-stone-400 italic text-xs">[ Свободное место ]</td>
+                            ${optCategory ? `<td class="text-stone-300">—</td>` : ''}
+                            ${optPhone ? `<td class="text-stone-300 font-mono">—</td>` : ''}
+                            ${optCheckin ? `<td class="border-l border-stone-200 text-center"><span class="inline-block w-4 h-4 border border-dashed border-stone-300 rounded-md"></span></td>` : ''}
                         </tr>
                     `;
                 }
             }
 
-            tablesHtml += `
-                <div class="border-2 border-stone-800 rounded-xl overflow-hidden print-avoid-break bg-white flex flex-col justify-between">
-                    <div>
-                        <div class="bg-stone-900 text-white px-3 py-1.5 flex justify-between items-center">
-                            <h4 class="font-bold text-xs uppercase tracking-wide">${getTableName(table)}</h4>
-                            <span class="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded">
-                                ${tableGuests.length} / ${table.capacity} чел
-                            </span>
+            const waiterNotesHtml = optWaiterNotes ? `
+                <div class="mt-4 border-2 border-dashed border-stone-300 rounded-2xl p-4 bg-stone-50/80 text-xs">
+                    <div class="flex items-center justify-between text-stone-700 font-bold mb-3 pb-1.5 border-b border-stone-200">
+                        <span class="flex items-center gap-1.5">
+                            <span>📝</span>
+                            <span>Заметки банкетной службы / официантов для ${getTableName(table)}:</span>
+                        </span>
+                        <span class="text-[9px] uppercase tracking-wider text-stone-400 font-mono">EM Pro v3 • Service Notes</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="font-bold text-stone-700 block mb-1">🍷 Напитки и подача алкоголя:</span>
+                            <div class="border-b border-stone-300 h-6"></div>
+                            <div class="border-b border-stone-300 h-6 mt-1"></div>
                         </div>
-                        ${cat && optCategory ? `<div class="bg-stone-100 text-stone-600 px-3 py-0.5 text-[9px] font-bold border-b border-stone-200">Категория: ${escapeHtml(cat.name)}</div>` : ''}
+                        <div>
+                            <span class="font-bold text-stone-700 block mb-1">🍲 График горячих блюд:</span>
+                            <div class="border-b border-stone-300 h-6"></div>
+                            <div class="border-b border-stone-300 h-6 mt-1"></div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="font-bold text-stone-700 text-xs block mb-1">⚠️ Особые пожелания (аллергии, детские стульчики, доп. приборы):</span>
+                        <div class="border-b border-stone-300 h-6"></div>
+                    </div>
+                </div>
+            ` : '';
+
+            tablesHtml = `
+                <div class="space-y-4">
+                    <div class="border-2 border-stone-850 rounded-2xl overflow-hidden bg-white shadow-xs">
+                        <div class="bg-gradient-to-r from-stone-900 to-emerald-950 text-white p-3.5 flex justify-between items-center">
+                            <div class="flex items-center gap-2.5">
+                                <span class="bg-amber-400 text-stone-950 text-xs font-black px-2.5 py-1 rounded-lg uppercase shadow-2xs">Стол № ${table.number}</span>
+                                <h3 class="font-bold text-base serif-title tracking-wide">${table.name ? escapeHtml(table.name) : 'Праздничный стол'}</h3>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                ${cat && optCategory ? `<span class="bg-white/15 px-2.5 py-1 rounded-lg font-bold">${escapeHtml(cat.name)}</span>` : ''}
+                                <span class="bg-amber-400/90 text-stone-950 font-black px-2.5 py-1 rounded-lg">
+                                    ${tableGuests.length} / ${table.capacity} мест
+                                </span>
+                            </div>
+                        </div>
                         <table class="w-full text-left text-xs border-collapse">
                             <thead>
-                                <tr class="bg-stone-100 border-b border-stone-300 text-[9px] uppercase tracking-wider text-stone-600 font-bold">
-                                    <th class="py-1 px-1.5 text-center w-6">№</th>
-                                    <th class="py-1 px-1.5">ФИО Гостя</th>
-                                    ${optCategory ? `<th class="py-1 px-1.5">Категория</th>` : ''}
-                                    ${optPhone ? `<th class="py-1 px-1.5">Телефон</th>` : ''}
-                                    ${optCheckin ? `<th class="py-1 px-1.5 text-center w-12 border-l border-stone-300">Отм.</th>` : ''}
+                                <tr class="bg-stone-100 border-b border-stone-300 text-[10px] uppercase tracking-wider text-stone-600 font-bold">
+                                    <th class="py-2 px-2 text-center w-8">№</th>
+                                    <th class="py-2 px-3">ФИО Гостя</th>
+                                    ${optCategory ? `<th class="py-2 px-2">Категория</th>` : ''}
+                                    ${optPhone ? `<th class="py-2 px-2">Телефон</th>` : ''}
+                                    ${optCheckin ? `<th class="py-2 px-2 text-center w-16 border-l border-stone-300">Явка</th>` : ''}
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="divide-y divide-stone-100">
                                 ${rowsHtml}
                             </tbody>
                         </table>
                     </div>
+                    ${waiterNotesHtml}
                 </div>
             `;
-        });
+        } else {
+            // === СЕТОЧНЫЙ РЕЖИМ (2, 4, 6 столов на А4) ===
+            let gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+            if (printTablesPerPage === 2) gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+            else if (printTablesPerPage === 4) gridClass = 'grid grid-cols-2 gap-3.5';
+            else if (printTablesPerPage === 6) gridClass = 'grid grid-cols-2 gap-2 text-[10px]';
+
+            let gridCards = '';
+            chunk.forEach(table => {
+                const tableGuests = state.guests.filter(g => g.tableId === table.id);
+                const cat = state.categories.find(c => c.id === table.categoryId);
+
+                let rowsHtml = '';
+                tableGuests.forEach((g, idx) => {
+                    const gCat = state.categories.find(c => c.id === g.categoryId);
+                    rowsHtml += `
+                        <tr class="border-b border-stone-200">
+                            <td class="py-1 px-1.5 font-bold text-center w-6 text-stone-500">${idx + 1}</td>
+                            <td class="py-1 px-1.5 font-bold text-stone-900">${escapeHtml(g.name)}</td>
+                            ${optCategory ? `<td class="py-1 px-1.5 text-stone-500 text-[10px]">${gCat ? escapeHtml(gCat.name) : ''}</td>` : ''}
+                            ${optPhone ? `<td class="py-1 px-1.5 font-mono text-[10px] text-stone-600">${escapeHtml(g.phone || '')}</td>` : ''}
+                            ${optCheckin ? `<td class="py-1 px-1.5 text-center w-12 border-l border-stone-200"><span class="inline-block w-3.5 h-3.5 border border-stone-400 rounded-xs"></span></td>` : ''}
+                        </tr>
+                    `;
+                });
+
+                if (optEmptySeats && tableGuests.length < table.capacity) {
+                    const emptyCount = table.capacity - tableGuests.length;
+                    for (let e = 0; e < emptyCount; e++) {
+                        const seatNum = tableGuests.length + e + 1;
+                        rowsHtml += `
+                            <tr class="border-b border-stone-200/50 bg-stone-50/40">
+                                <td class="py-1 px-1.5 text-center w-6 text-stone-300 font-mono">${seatNum}</td>
+                                <td class="py-1 px-1.5 text-stone-300 italic text-[11px]">[ Свободное место ]</td>
+                                ${optCategory ? `<td></td>` : ''}
+                                ${optPhone ? `<td></td>` : ''}
+                                ${optCheckin ? `<td class="border-l border-stone-200"></td>` : ''}
+                            </tr>
+                        `;
+                    }
+                }
+
+                gridCards += `
+                    <div class="border-2 border-stone-800 rounded-xl overflow-hidden print-avoid-break bg-white flex flex-col justify-between">
+                        <div>
+                            <div class="bg-stone-900 text-white px-3 py-1.5 flex justify-between items-center">
+                                <h4 class="font-bold text-xs uppercase tracking-wide">${getTableName(table)}</h4>
+                                <span class="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded">
+                                    ${tableGuests.length} / ${table.capacity} чел
+                                </span>
+                            </div>
+                            ${cat && optCategory ? `<div class="bg-stone-100 text-stone-600 px-3 py-0.5 text-[9px] font-bold border-b border-stone-200">Категория: ${escapeHtml(cat.name)}</div>` : ''}
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-stone-100 border-b border-stone-300 text-[9px] uppercase tracking-wider text-stone-600 font-bold">
+                                        <th class="py-1 px-1.5 text-center w-6">№</th>
+                                        <th class="py-1 px-1.5">ФИО Гостя</th>
+                                        ${optCategory ? `<th class="py-1 px-1.5">Категория</th>` : ''}
+                                        ${optPhone ? `<th class="py-1 px-1.5">Телефон</th>` : ''}
+                                        ${optCheckin ? `<th class="py-1 px-1.5 text-center w-12 border-l border-stone-300">Отм.</th>` : ''}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            });
+            tablesHtml = `<div class="${gridClass}">${gridCards}</div>`;
+        }
+
+        const pageBadge = isDedicatedTableMode 
+            ? `КАРТОЧКА СТОЛА №${chunk[0]?.number || ''}`
+            : 'ПЛАН РАССАДКИ ГОСТЕЙ';
 
         const pageHeaderHtml = buildPrintHeaderHtml({
             eventTitle,
@@ -1309,11 +1476,11 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
             showHdrTime,
             showHdrVenue,
             showHdrHosts,
-            badgeText: 'ПЛАН РАССАДКИ ГОСТЕЙ',
+            badgeText: pageBadge,
             badgeColor: 'emerald',
             pageNum: pageIndex + 1,
             totalPages: totalPages,
-            subInfo: `Столы: ${chunk.map(t => '#' + t.number).join(', ')}`
+            subInfo: isDedicatedTableMode ? getTableName(chunk[0]) : `Столы: ${chunk.map(t => '#' + t.number).join(', ')}`
         });
 
         const footerHtml = showHdrFooter ? `
@@ -1323,13 +1490,30 @@ function renderSeatingPrintPreview(previewContainer, printOutputArea) {
             </div>
         ` : '';
 
+        const fileSheetName = isDedicatedTableMode ? `Стол_${chunk[0]?.number || (pageIndex + 1)}` : `Рассадка_Лист_${pageIndex + 1}`;
+
         htmlPages += `
-            <div class="a4-sheet-preview print-page-sheet flex flex-col justify-between">
+            <div id="seating-page-sheet-${pageIndex}" class="a4-sheet-preview print-page-sheet flex flex-col justify-between">
                 <div>
-                    ${pageHeaderHtml}
-                    <div class="${gridClass}">
-                        ${tablesHtml}
+                    <!-- Панель быстрых действий на листе стола (только на экране) -->
+                    <div class="no-print flex flex-wrap justify-between items-center bg-stone-100/90 border border-stone-250 rounded-xl px-3 py-1.5 mb-2.5 text-xs select-none gap-2">
+                        <span class="font-bold text-stone-700 flex items-center gap-1.5">
+                            <span class="bg-emerald-800 text-white text-[10px] font-mono px-2 py-0.5 rounded-md">Лист ${pageIndex + 1} из ${totalPages}</span>
+                            <span>${isDedicatedTableMode ? getTableName(chunk[0]) : `Столы: ${chunk.map(t => '#' + t.number).join(', ')}`}</span>
+                        </span>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="downloadCurrentInvitationPDF(document.getElementById('seating-page-sheet-${pageIndex}'), '${fileSheetName}.pdf')" class="bg-emerald-800 hover:bg-emerald-700 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать этот лист в PDF">
+                                <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                                <span>Скачать PDF</span>
+                            </button>
+                            <button type="button" onclick="triggerPrint()" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Печать">
+                                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                <span>Печать</span>
+                            </button>
+                        </div>
                     </div>
+                    ${pageHeaderHtml}
+                    ${tablesHtml}
                 </div>
                 ${footerHtml}
             </div>
@@ -1555,13 +1739,7 @@ function renderSchemaPrintPreview(previewContainer, printOutputArea) {
 
 function renderInvitationPrintPreview(previewContainer, printOutputArea, invitationType = 'general') {
     const isGeneral = invitationType === 'general';
-    const layoutSelect = isGeneral 
-        ? document.getElementById('print-inv-gen-layout')
-        : document.getElementById('print-inv-pers-layout');
-    
-    const layout = layoutSelect ? (parseInt(layoutSelect.value) || 2) : 2;
-
-    const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted } = getPrintEventInfo();
+    const { eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, eventHostsFormatted, venueLink } = getPrintEventInfo();
     
     let invText = '';
     if (isGeneral) {
@@ -1572,16 +1750,14 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea, invitat
 
     let guestCardsData = [];
     if (isGeneral) {
-        // ОБЩИЙ ПРИГЛАСИТЕЛЬНЫЙ: генерирует ровно один лист А4 с пустыми строками для рукописного заполнения
-        for (let i = 0; i < layout; i++) {
-            guestCardsData.push({
-                name: null,
-                tableInfo: 'Праздничный стол торжества',
-                isPersonal: false
-            });
-        }
+        // ОБЩИЙ ПРИГЛАСИТЕЛЬНЫЙ: ровно 1 лист А4 горизонтального формата
+        guestCardsData.push({
+            name: null,
+            tableInfo: null,
+            isPersonal: false
+        });
     } else {
-        // ПЕРСОНАЛЬНЫЕ ПРИГЛАСИТЕЛЬНЫЕ: генерирует карточки с именами конкретных гостей и их столами
+        // ПЕРСОНАЛЬНЫЕ ПРИГЛАСИТЕЛЬНЫЕ: каждый гость получает 1 полный лист А4 альбомного формата
         const filterVal = document.getElementById('print-inv-pers-filter')?.value || 'all';
         let targetGuests = [...state.guests];
         if (filterVal === 'selected_only') {
@@ -1601,6 +1777,7 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea, invitat
                 return {
                     id: g.id,
                     name: g.name,
+                    phone: g.phone,
                     tableInfo: tableInfo,
                     isPersonal: true
                 };
@@ -1614,71 +1791,63 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea, invitat
         }
     }
 
-    // Разбиваем на листы А4 по layout (1, 2 или 4 на лист)
-    const cardsPerPage = layout;
-    const pages = [];
-    for (let i = 0; i < guestCardsData.length; i += cardsPerPage) {
-        pages.push(guestCardsData.slice(i, i + cardsPerPage));
-    }
+    // Все пригласительные строго по 1 штуке на полный горизонтальный лист А4
+    setPrintLandscape(true);
 
     let htmlPages = '';
 
-    pages.forEach((pageCards, pageIdx) => {
-        let cardsHtml = '';
+    guestCardsData.forEach((card, pageIdx) => {
+        const cardHtml = buildSingleInvitationCardHtml(
+            card,
+            eventTitle,
+            eventType,
+            eventDate,
+            eventTimeFormatted,
+            eventVenueFormatted,
+            invText,
+            venueLink,
+            eventHostsFormatted
+        );
 
-        if (cardsPerPage === 1) {
-            // 1 роскошный большой билет на весь лист А4
-            const card = pageCards[0];
-            cardsHtml = `
-                <div class="h-full flex flex-col justify-center">
-                    ${buildSingleInvitationCardHtml(card, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'large')}
-                </div>
-            `;
-        } else if (cardsPerPage === 2) {
-            // 2 пригласительных на лист А4 с пунктирной линией отреза
-            cardsHtml = `
-                <div class="flex flex-col gap-4 h-full justify-between">
-                    <div class="flex-1">
-                        ${buildSingleInvitationCardHtml(pageCards[0], eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'medium')}
-                    </div>
-                    <div class="invitation-cut-line-h py-1 text-center select-none">
-                        <span class="bg-white px-3 text-[10px] text-stone-400 font-mono tracking-widest inline-flex items-center gap-1.5">
-                            ✂️ ЛИНИЯ РАЗРЕЗА А5 ✂️
-                        </span>
-                    </div>
-                    <div class="flex-1">
-                        ${pageCards[1] ? buildSingleInvitationCardHtml(pageCards[1], eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'medium') : ''}
-                    </div>
-                </div>
-            `;
-        } else if (cardsPerPage === 4) {
-            // 4 карточки на лист А4 (Сетка 2x2) с линиями отреза
-            const c1 = pageCards[0];
-            const c2 = pageCards[1];
-            const c3 = pageCards[2];
-            const c4 = pageCards[3];
-
-            cardsHtml = `
-                <div class="grid grid-cols-2 gap-3.5 h-full relative">
-                    <div class="p-1">${c1 ? buildSingleInvitationCardHtml(c1, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
-                    <div class="p-1">${c2 ? buildSingleInvitationCardHtml(c2, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
-                    <div class="col-span-2 invitation-cut-line-h text-center -my-1 select-none">
-                        <span class="bg-white px-2 text-[9px] text-stone-400 font-mono">✂️ РАЗРЕЗ А6 ✂️</span>
-                    </div>
-                    <div class="p-1">${c3 ? buildSingleInvitationCardHtml(c3, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
-                    <div class="p-1">${c4 ? buildSingleInvitationCardHtml(c4, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, 'small') : ''}</div>
-                </div>
-            `;
-        }
+        const safeGuestName = (card.isPersonal && card.name) ? card.name.replace(/[\\/:*?"<>|]/g, '_') : 'Общее';
+        const fileBaseName = `Пригласительное_${safeGuestName}`;
 
         htmlPages += `
-            <div class="a4-sheet-preview print-page-sheet flex flex-col justify-between" style="min-height: 290mm;">
-                <div class="flex-1">
-                    ${cardsHtml}
+            <div id="inv-page-sheet-${pageIdx}" class="a4-sheet-preview a4-sheet-landscape print-page-sheet flex flex-col justify-between relative group" style="width: 297mm; max-width: 297mm; min-height: 200mm; max-height: 210mm; aspect-ratio: 297/210; box-sizing: border-box; overflow: hidden; padding: 6mm 8mm;">
+                <!-- Верхняя компактная панель быстрых действий на листе (только на экране) -->
+                <div class="no-print flex flex-wrap justify-between items-center bg-stone-100/90 border border-stone-250 rounded-xl px-3 py-1.5 mb-2.5 text-xs select-none gap-2">
+                    <span class="font-bold text-stone-700 flex items-center gap-1.5">
+                        <span class="bg-emerald-800 text-white text-[10px] font-mono px-2 py-0.5 rounded-md">Лист ${pageIdx + 1} из ${guestCardsData.length}</span>
+                        <span class="truncate max-w-[200px] sm:max-w-xs">${card.isPersonal && card.name ? escapeHtml(card.name) : 'Общий бланк билета'}</span>
+                        <span class="text-[10px] text-amber-800 font-semibold bg-amber-100/80 px-2 py-0.5 rounded-md">А4 Горизонтально</span>
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="downloadCurrentInvitationImage(document.getElementById('inv-page-sheet-${pageIdx}'), '${fileBaseName}.png')" class="bg-amber-400 hover:bg-amber-300 text-stone-950 text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать этот лист как фото (PNG)">
+                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                            <span class="hidden sm:inline">Скачать фото</span>
+                        </button>
+                        <button type="button" onclick="downloadCurrentInvitationPDF(document.getElementById('inv-page-sheet-${pageIdx}'), '${fileBaseName}.pdf')" class="bg-emerald-800 hover:bg-emerald-700 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Скачать этот лист в PDF (со ссылкой на место)">
+                            <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                            <span class="hidden sm:inline">Скачать PDF</span>
+                        </button>
+                        ${card.isPersonal && card.id ? `
+                        <button type="button" onclick="sendWhatsAppPersonalInvitation('${card.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg transition flex items-center gap-1 shadow-2xs active:scale-95" title="Отправить гостю в WhatsApp">
+                            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-amber-300"></i>
+                            <span class="hidden sm:inline">WhatsApp</span>
+                        </button>
+                        ` : ''}
+                    </div>
                 </div>
-                <div class="border-t border-stone-200 pt-1.5 mt-2 flex justify-between items-center text-[9px] text-stone-400 select-none">
-                    <span>EM Pro v3 • ${isGeneral ? 'Общий пригласительный билет' : 'Персональные пригласительные карточки'}</span>
-                    <span>Лист ${pageIdx + 1} из ${pages.length}</span>
+
+                <!-- Роскошный пригласительный билет на полный горизонтальный А4 -->
+                <div class="flex-1 flex flex-col justify-between">
+                    ${cardHtml}
+                </div>
+
+                <!-- Нижняя полоса с метаданными (скрыта при экспорте PDF/печати) -->
+                <div class="no-print border-t border-stone-200 pt-1 mt-1 flex justify-between items-center text-[9px] text-stone-400 select-none">
+                    <span>EM Pro v3 • ${isGeneral ? 'Общий пригласительный билет' : 'Персональный пригласительный билет'} • 1 билет на полный А4 горизонтально</span>
+                    <span>Лист ${pageIdx + 1} из ${guestCardsData.length}</span>
                 </div>
             </div>
         `;
@@ -1691,87 +1860,354 @@ function renderInvitationPrintPreview(previewContainer, printOutputArea, invitat
     lucide.createIcons();
 }
 
-function buildSingleInvitationCardHtml(cardData, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, size) {
+function buildSingleInvitationCardHtml(cardData, eventTitle, eventType, eventDate, eventTimeFormatted, eventVenueFormatted, invText, venueLink, eventHostsFormatted) {
     if (!cardData) return '';
 
-    const isSmall = size === 'small';
-    const isLarge = size === 'large';
-
     const greetingHtml = cardData.isPersonal && cardData.name ? `
-        <div class="serif-title font-bold text-amber-950 ${isSmall ? 'text-xs' : (isLarge ? 'text-xl' : 'text-sm')}">
-            Дорогой(ая) <span class="underline decoration-amber-500 underline-offset-4">${escapeHtml(cardData.name)}</span>!
+        <div class="serif-title font-bold text-amber-950 text-xl md:text-2xl">
+            Дорогой(ая) <span class="underline decoration-amber-500 underline-offset-4 font-bold text-amber-950">${escapeHtml(cardData.name)}</span>!
         </div>
     ` : `
-        <div class="serif-title font-bold text-amber-950 ${isSmall ? 'text-xs' : (isLarge ? 'text-xl' : 'text-sm')}">
+        <div class="serif-title font-bold text-amber-950 text-xl md:text-2xl">
             Дорогие друзья, родные и близкие!
         </div>
-        <div class="text-[10px] text-stone-400 mt-1 font-mono">
+        <div class="text-xs text-stone-400 mt-1 font-mono">
             Уважаемый(ая) __________________________________________________
         </div>
     `;
 
+    const activeMapLink = venueLink || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventVenueFormatted)}`;
+
     return `
-        <div class="invitation-border-luxury rounded-2xl shadow-sm h-full flex flex-col justify-between text-center relative overflow-hidden bg-[#fffdfa] ${isSmall ? 'p-2.5' : (isLarge ? 'p-6' : 'p-4')}">
+        <div class="invitation-border-luxury rounded-3xl shadow-sm h-full flex flex-col justify-between relative overflow-hidden bg-[#fffdfa] p-3 md:p-5" style="height: 100%; max-height: 194mm; box-sizing: border-box;">
             <!-- Угловые золоченые орнаменты -->
             <div class="invitation-corner invitation-corner-tl"></div>
             <div class="invitation-corner invitation-corner-tr"></div>
             <div class="invitation-corner invitation-corner-bl"></div>
             <div class="invitation-corner invitation-corner-br"></div>
 
-            <div class="invitation-border-inner rounded-xl space-y-2 flex-1 flex flex-col justify-between ${isSmall ? 'p-2' : (isLarge ? 'p-5' : 'p-3')}">
-                <!-- Шапка приглашения -->
-                <div>
-                    <span class="text-[9px] uppercase tracking-[0.25em] text-amber-800 font-bold block mb-0.5">П Р И Г Л А Ш Е Н И Е</span>
-                    <h3 class="serif-title font-bold text-amber-950 leading-tight ${isSmall ? 'text-sm' : (isLarge ? 'text-2xl' : 'text-lg')}">
+            <div class="invitation-border-inner rounded-2xl p-3 md:p-5 flex-1 flex flex-col justify-between space-y-2">
+                <!-- ВЕРХНЯЯ ШАПКА ПРИГЛАШЕНИЯ -->
+                <div class="text-center pt-0.5">
+                    <span class="text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-amber-800 font-extrabold inline-block bg-amber-100/80 border border-amber-300 px-3 py-0.5 rounded-full shadow-2xs">
+                        ❖ П Р И Г Л А Ш Е Н И Е  Н А  Т О Р Ж Е С Т В О ❖
+                    </span>
+                    <h2 class="serif-title font-bold text-amber-950 text-2xl md:text-3xl tracking-wide leading-tight mt-1">
                         ${escapeHtml(eventTitle)}
-                    </h3>
-                    <div class="w-16 h-0.5 bg-amber-600/50 mx-auto mt-1 mb-1.5"></div>
+                    </h2>
+                    <div class="flex items-center justify-center gap-2 pt-0.5">
+                        <span class="h-px w-12 bg-amber-500/50"></span>
+                        <span class="text-xs text-amber-700">✦</span>
+                        <span class="text-xs font-bold text-emerald-900 tracking-wider uppercase">${escapeHtml(eventType)}</span>
+                        <span class="text-xs text-amber-700">✦</span>
+                        <span class="h-px w-12 bg-amber-500/50"></span>
+                    </div>
                 </div>
 
-                <!-- Обращение к гостю -->
-                <div class="py-0.5">
-                    ${greetingHtml}
+                <!-- ОСНОВНАЯ ГОРИЗОНТАЛЬНАЯ ЧАСТЬ (2 КОЛОНКИ НА ГОРИЗОНТАЛЬНОМ ЛИСТЕ А4) -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch my-auto py-0.5">
+                    <!-- ЛЕВАЯ КОЛОНКА: ОБРАЩЕНИЕ, ТЕКСТ И ПОДПИСЬ -->
+                    <div class="md:col-span-7 flex flex-col justify-between text-left space-y-2 pr-0 md:pr-2">
+                        <!-- Обращение к гостю -->
+                        <div>
+                            ${greetingHtml}
+                        </div>
+
+                        <!-- Текст приглашения -->
+                        <div class="flex-1 flex items-center">
+                            <p class="text-stone-750 leading-relaxed italic px-1 whitespace-pre-line font-serif text-xs md:text-sm">
+                                ${escapeHtml(invText)}
+                            </p>
+                        </div>
+
+                        <!-- Подпись и пожелание -->
+                        <div class="pt-1.5 text-stone-700 border-t border-amber-200/50">
+                            <p class="italic serif-title text-xs md:text-sm text-stone-800">Будем счастливы разделить этот радостный день вместе с Вами!</p>
+                            <span class="text-[9px] uppercase tracking-wider text-amber-800 font-bold block mt-0.5">
+                                С любовью и уважением${eventHostsFormatted ? ` • ${escapeHtml(eventHostsFormatted)}` : ''}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- ПРАВАЯ КОЛОНКА: ИНФОБЛОК ТОРЖЕСТВА + ССЫЛКА НА КАРТУ В PDF -->
+                    <div class="md:col-span-5 bg-gradient-to-br from-amber-50/90 to-amber-100/60 border border-amber-300/80 rounded-2xl p-3.5 md:p-4 text-stone-850 space-y-2 text-left shadow-2xs flex flex-col justify-between">
+                        <div class="text-[10px] uppercase tracking-widest text-amber-900 font-extrabold pb-1 border-b border-amber-200/80 flex items-center justify-between">
+                            <span>ИНФОРМАЦИЯ О ТОРЖЕСТВЕ</span>
+                            <span class="text-amber-700 font-mono">✦ VIP ✦</span>
+                        </div>
+
+                        <!-- Дата -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-xl bg-amber-200/70 border border-amber-300/80 flex items-center justify-center shrink-0 text-sm shadow-2xs">
+                                📅
+                            </div>
+                            <div>
+                                <span class="text-[9px] uppercase font-bold text-stone-500 block leading-tight">Дата торжества</span>
+                                <span class="font-bold text-stone-900 text-xs md:text-sm">${escapeHtml(eventDate)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Время сбора -->
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-7 h-7 rounded-xl bg-amber-200/70 border border-amber-300/80 flex items-center justify-center shrink-0 text-sm shadow-2xs">
+                                🕒
+                            </div>
+                            <div>
+                                <span class="text-[9px] uppercase font-bold text-stone-500 block leading-tight">Время сбора гостей</span>
+                                <span class="font-bold text-stone-900 text-xs md:text-sm">${escapeHtml(eventTimeFormatted)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Место проведения с активной ссылкой на карту прямо в названии -->
+                        <div class="pt-1.5 border-t border-amber-200/70">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-7 h-7 rounded-xl bg-amber-200/70 border border-amber-300/80 flex items-center justify-center shrink-0 text-sm mt-0.5 shadow-2xs">
+                                    📍
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-[9px] uppercase font-bold text-stone-500 block leading-tight">Место проведения</span>
+                                    <!-- Кликабельная ссылка прямо в тексте названия места проведения -->
+                                    <a href="${escapeHtml(activeMapLink)}" target="_blank" rel="noopener noreferrer" class="venue-pdf-link font-extrabold text-stone-900 hover:text-emerald-800 text-xs md:text-sm block leading-snug underline decoration-amber-500 decoration-2 underline-offset-2 transition" title="Нажмите, чтобы открыть карту (2ГИС / Карты)">
+                                        ${escapeHtml(eventVenueFormatted)} ↗
+                                    </a>
+                                    <div class="mt-1 flex items-center gap-2">
+                                        <a href="${escapeHtml(activeMapLink)}" target="_blank" rel="noopener noreferrer" class="venue-pdf-link inline-flex items-center gap-1 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-1 px-2 rounded-lg shadow-2xs text-[10px] transition active:scale-95 no-underline">
+                                            <span>🗺️ Открыть на карте</span>
+                                            <svg class="w-3 h-3 inline-block text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                        </a>
+                                        <span class="text-[8px] text-stone-400 font-mono truncate max-w-[130px] hidden md:inline">
+                                            ${escapeHtml(activeMapLink)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Персональный стол (если указан) -->
+                        ${cardData.tableInfo ? `
+                        <div class="pt-1.5 border-t border-amber-200/70 bg-emerald-50/90 -mx-1 px-2.5 py-1.5 rounded-xl border border-emerald-200">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-emerald-800 font-bold shrink-0">🪑</span>
+                                <div class="min-w-0 flex-1">
+                                    <span class="text-[8px] uppercase font-bold text-emerald-800 block leading-tight">Ваш стол в зале</span>
+                                    <span class="font-bold text-emerald-950 text-xs md:text-sm truncate block">${escapeHtml(cardData.tableInfo)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
                 </div>
 
-                <!-- Текст приглашения (с сохранением переносов) -->
-                <p class="text-stone-700 leading-relaxed italic px-2 whitespace-pre-line font-serif ${isSmall ? 'text-[10px] line-clamp-4' : (isLarge ? 'text-sm' : 'text-xs')}">
-                    ${escapeHtml(invText)}
-                </p>
-
-                <!-- Сведения о мероприятии (Дата, Время, Место, Стол) -->
-                <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-2 my-1 text-stone-800 space-y-1 text-left font-medium ${isSmall ? 'text-[9px]' : (isLarge ? 'text-xs p-3.5 space-y-1.5' : 'text-[11px]')}">
-                    <div class="flex items-center gap-2">
-                        <span class="text-amber-800 font-bold w-4 text-center shrink-0">📅</span>
-                        <span class="font-bold text-stone-900">Дата торжества:</span>
-                        <span class="text-stone-700">${escapeHtml(eventDate)}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-amber-800 font-bold w-4 text-center shrink-0">🕒</span>
-                        <span class="font-bold text-stone-900">Время сбора:</span>
-                        <span class="text-stone-700">${escapeHtml(eventTimeFormatted)}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-amber-800 font-bold w-4 text-center shrink-0">📍</span>
-                        <span class="font-bold text-stone-900">Место проведения:</span>
-                        <span class="text-stone-700">${escapeHtml(eventVenueFormatted)}</span>
-                    </div>
-                    ${cardData.tableInfo ? `
-                    <div class="flex items-center gap-2 pt-0.5 border-t border-amber-200/70 text-emerald-900 font-semibold">
-                        <span class="text-emerald-800 font-bold w-4 text-center shrink-0">🪑</span>
-                        <span>Ваш стол:</span>
-                        <span class="text-emerald-800 font-bold">${escapeHtml(cardData.tableInfo)}</span>
-                    </div>
-                    ` : ''}
-                </div>
-
-                <!-- Подпись внизу -->
-                <div class="pt-1 text-center text-stone-600">
-                    <p class="italic serif-title ${isSmall ? 'text-[9px]' : (isLarge ? 'text-xs' : 'text-[10px]')}">Ждём вас с нетерпением и радостью!</p>
-                    <span class="text-[8px] uppercase tracking-wider text-amber-800 font-semibold block mt-0.5">С любовью и уважением</span>
+                <!-- НИЖНЯЯ ДЕКОРАТИВНАЯ ЧЕРТА -->
+                <div class="text-center text-[9px] text-stone-400 font-mono tracking-widest pt-0.5 border-t border-amber-200/50">
+                    ✦ EM Pro v3 • ПРИГЛАСИТЕЛЬНЫЙ БИЛЕТ • ФОРМАТ А4 АЛЬБОМНЫЙ ✦
                 </div>
             </div>
         </div>
     `;
+}
+
+// Управление динамической ориентацией страницы при печати
+function setPrintLandscape(isLandscape) {
+    let style = document.getElementById('dynamic-print-page-style');
+    if (!style) {
+        style = document.createElement('style');
+        style.id = 'dynamic-print-page-style';
+        document.head.appendChild(style);
+    }
+    if (isLandscape) {
+        style.innerHTML = `@media print { @page { size: landscape; margin: 5mm; } body { width: 297mm !important; } }`;
+        document.body.classList.add('print-landscape-mode');
+    } else {
+        style.innerHTML = `@media print { @page { size: portrait; margin: 6mm; } body { width: 210mm !important; } }`;
+        document.body.classList.remove('print-landscape-mode');
+    }
+}
+
+// Скачивание пригласительного как фото (PNG) высокого качества
+async function downloadCurrentInvitationImage(targetElement = null, customFilename = null) {
+    let sheet = targetElement;
+    if (!sheet) {
+        sheet = document.querySelector('#print-preview-container .a4-sheet-preview');
+    }
+    if (!sheet) {
+        showToast('Лист пригласительного не найден');
+        return;
+    }
+
+    const noPrintElements = sheet.querySelectorAll('.no-print');
+    noPrintElements.forEach(el => el.style.visibility = 'hidden');
+
+    showToast('📸 Подготовка фото высокого разрешения (PNG)...');
+    try {
+        const canvas = await html2canvas(sheet, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            onclone: (clonedDoc) => {
+                const clonedNoPrint = clonedDoc.querySelectorAll('.no-print');
+                clonedNoPrint.forEach(el => el.style.display = 'none');
+            }
+        });
+
+        noPrintElements.forEach(el => el.style.visibility = '');
+
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        const a = document.createElement('a');
+        let filename = customFilename;
+        if (!filename) {
+            const p = state.profile || {};
+            const cleanTitle = (p.eventName || 'Пригласительное').replace(/[\\/:*?"<>|]/g, '_');
+            if (printCurrentMode === 'invitation_personal') {
+                const sel = document.getElementById('print-inv-pers-guest-select');
+                const guestName = sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text.split('(')[0].trim() : 'Гость';
+                filename = `Пригласительное_${guestName.replace(/[\\/:*?"<>|]/g, '_')}.png`;
+            } else {
+                filename = `Пригласительное_${cleanTitle}.png`;
+            }
+        }
+        a.download = filename;
+        a.href = imgData;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast(`✅ Фото успешно скачано! (${filename})`);
+    } catch (err) {
+        noPrintElements.forEach(el => el.style.visibility = '');
+        console.error('Ошибка экспорта изображения:', err);
+        showToast('Не удалось сформировать фото');
+    }
+}
+
+// Скачивание как PDF с активной ссылкой на карту (гарантированно 1 страница без пустых листов)
+async function downloadCurrentInvitationPDF(targetElement = null, customFilename = null) {
+    let sheet = targetElement;
+    if (!sheet) {
+        sheet = document.querySelector('#print-preview-container .a4-sheet-preview');
+    }
+    if (!sheet) {
+        showToast('Лист для экспорта PDF не найден');
+        return;
+    }
+
+    const isLandscape = printCurrentMode === 'invitation_general' || printCurrentMode === 'invitation_personal' || printCurrentMode === 'schema' || sheet.classList.contains('a4-sheet-landscape');
+
+    showToast('📄 Формирование одностраничного PDF (А4)...');
+    try {
+        let filename = customFilename;
+        if (!filename) {
+            const p = state.profile || {};
+            const cleanTitle = (p.eventName || 'Пригласительное').replace(/[\\/:*?"<>|]/g, '_');
+            if (printCurrentMode === 'invitation_personal') {
+                const sel = document.getElementById('print-inv-pers-guest-select');
+                const guestName = sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text.split('(')[0].trim() : 'Гость';
+                filename = `Пригласительное_${guestName.replace(/[\\/:*?"<>|]/g, '_')}.pdf`;
+            } else if (printCurrentMode === 'seating') {
+                const sel = document.getElementById('print-seating-table-filter');
+                const tableName = (sel && sel.value !== 'all' && sel.options[sel.selectedIndex]) ? sel.options[sel.selectedIndex].text.replace(/[\\/:*?"<>|]/g, '_') : 'Рассадка_столов';
+                filename = `${tableName}.pdf`;
+            } else if (printCurrentMode === 'schema') {
+                filename = `Схема_зала_${cleanTitle}.pdf`;
+            } else {
+                filename = `Пригласительное_${cleanTitle}.pdf`;
+            }
+        }
+
+        const clone = sheet.cloneNode(true);
+        const noPrintItems = clone.querySelectorAll('.no-print');
+        noPrintItems.forEach(el => el.remove());
+
+        const widthMm = isLandscape ? 297 : 210;
+        const heightMm = isLandscape ? 210 : 297;
+
+        clone.style.margin = '0';
+        clone.style.boxShadow = 'none';
+        clone.style.border = 'none';
+        clone.style.width = `${widthMm}mm`;
+        clone.style.maxWidth = `${widthMm}mm`;
+        clone.style.height = `${heightMm}mm`;
+        clone.style.maxHeight = `${heightMm}mm`;
+        clone.style.boxSizing = 'border-box';
+        clone.style.overflow = 'hidden';
+        clone.style.padding = isLandscape ? '6mm 8mm' : '8mm 8mm';
+
+        const tempContainer = document.createElement('div');
+        tempContainer.style.position = 'fixed';
+        tempContainer.style.left = '-99999px';
+        tempContainer.style.top = '0';
+        tempContainer.style.width = `${widthMm}mm`;
+        tempContainer.style.height = `${heightMm}mm`;
+        tempContainer.style.maxHeight = `${heightMm}mm`;
+        tempContainer.style.overflow = 'hidden';
+        tempContainer.style.background = '#ffffff';
+        tempContainer.style.zIndex = '-1000';
+        tempContainer.appendChild(clone);
+        document.body.appendChild(tempContainer);
+
+        const opt = {
+            margin: 0,
+            filename: filename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                width: isLandscape ? 1122 : 793,
+                height: isLandscape ? 793 : 1122,
+                windowWidth: isLandscape ? 1122 : 793,
+                windowHeight: isLandscape ? 793 : 1122,
+                scrollX: 0,
+                scrollY: 0
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait', compress: true },
+            pagebreak: { mode: ['avoid-all'] },
+            enableLinks: true
+        };
+
+        try {
+            const worker = html2pdf().set(opt).from(clone);
+            await worker.toPdf().get('pdf').then((pdf) => {
+                const totalPages = pdf.internal.getNumberOfPages();
+                if (totalPages > 1) {
+                    for (let p = totalPages; p > 1; p--) {
+                        pdf.deletePage(p);
+                    }
+                }
+            }).save();
+            showToast(`✅ Файл «${filename}» сохранён (1 страница)!`);
+        } finally {
+            if (tempContainer.parentElement) {
+                document.body.removeChild(tempContainer);
+            }
+        }
+    } catch (err) {
+        console.error('Ошибка экспорта PDF:', err);
+        showToast('Используем системный диалог печати PDF...');
+        triggerPrint();
+    }
+}
+
+// Скачивание фото выбранного гостя
+function downloadSelectedGuestPhoto() {
+    const sel = document.getElementById('print-inv-pers-guest-select');
+    const guestId = sel ? sel.value : null;
+    if (!guestId) {
+        showToast('Выберите гостя из списка');
+        return;
+    }
+    const guest = state.guests.find(g => g.id === guestId);
+    const filterSelect = document.getElementById('print-inv-pers-filter');
+    if (filterSelect) {
+        filterSelect.value = 'selected_only';
+    }
+    updatePrintPreview();
+    setTimeout(() => {
+        const guestName = guest ? guest.name : 'Гость';
+        const cleanName = guestName.replace(/[\\/:*?"<>|]/g, '_');
+        downloadCurrentInvitationImage(null, `Пригласительное_${cleanName}.png`);
+    }, 120);
 }
 
 function sendWhatsAppPersonalInvitation(guestId) {
@@ -1812,35 +2248,45 @@ function sendWhatsAppPersonalInvitation(guestId) {
     showToast(`Приглашение для «${guest.name}» готово к отправке в WhatsApp`);
 }
 
-function sendWhatsAppPersonalInvitationPDF(guestId) {
+async function sendWhatsAppPersonalInvitationPDF(guestId) {
     const guest = state.guests.find(g => g.id === guestId);
     if (!guest) return;
     
     openPrintModal('invitation_personal', guest.id);
-    
-    const p = state.profile || {};
-    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
-    const dateText = p.date ? formatDate(p.date) : '';
-    const table = state.tables.find(t => t.id === guest.tableId);
-    const tableName = table ? `${getTableName(table)}${table.name ? ` («${table.name}»)` : ''}` : 'Праздничный стол';
+    const filterSelect = document.getElementById('print-inv-pers-filter');
+    if (filterSelect) filterSelect.value = 'selected_only';
+    updatePrintPreview();
 
-    let msg = `✨ *ПЕРСОНАЛЬНОЕ ПРИГЛАШЕНИЕ (PDF)* ✨\n\n`;
-    msg += `Уважаемый(ая) *${guest.name}*!\n`;
-    msg += `Приглашаем Вас на торжество *«${eventTitle}»*! 📅 ${dateText}\n`;
-    msg += `🍽️ Стол рассадки: *${tableName}*\n`;
-    msg += `📄 _(Прикрепляю персональный пригласительный билет в PDF)_ ✨\n`;
-
-    let cleanPhone = (guest.phone || '').replace(/[^0-9+]/g, '');
-    if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
+    showToast(`📄 Формируем PDF «Пригласительное» для «${guest.name}»...`);
     
-    showToast(`Сформирован билет для «${guest.name}». Сохраните в PDF и отправьте в чат`);
-    setTimeout(() => {
-        let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-        if (cleanPhone && cleanPhone.length >= 9) {
-            url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
-        }
-        window.open(url, '_blank');
-    }, 700);
+    setTimeout(async () => {
+        const cleanName = guest.name.replace(/[\\/:*?"<>|]/g, '_');
+        await downloadCurrentInvitationPDF(null, `Пригласительное_${cleanName}.pdf`);
+
+        const p = state.profile || {};
+        const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+        const dateText = p.date ? formatDate(p.date) : '';
+        const table = state.tables.find(t => t.id === guest.tableId);
+        const tableName = table ? `${getTableName(table)}${table.name ? ` («${table.name}»)` : ''}` : 'Праздничный стол';
+
+        let msg = `✨ *ПЕРСОНАЛЬНОЕ ПРИГЛАШЕНИЕ (PDF)* ✨\n\n`;
+        msg += `Уважаемый(ая) *${guest.name}*!\n`;
+        msg += `Приглашаем Вас на торжество *«${eventTitle}»*! 📅 ${dateText}\n`;
+        msg += `🍽️ Стол рассадки: *${tableName}*\n`;
+        if (p.venueLink && p.venueLink.trim()) msg += `🗺️ Место на карте / 2ГИС: ${p.venueLink.trim()}\n`;
+        msg += `📄 _(Файл «Пригласительное.pdf» сформирован — прикрепляю к сообщению)_ ✨\n`;
+
+        let cleanPhone = (guest.phone || '').replace(/[^0-9+]/g, '');
+        if (cleanPhone.startsWith('+')) cleanPhone = cleanPhone.substring(1);
+        
+        setTimeout(() => {
+            let url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            if (cleanPhone && cleanPhone.length >= 9) {
+                url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+            }
+            window.open(url, '_blank');
+        }, 500);
+    }, 300);
 }
 
 function sendSelectedGuestWhatsApp() {
@@ -1865,12 +2311,11 @@ function sendSelectedGuestWhatsAppPDF() {
 
 function triggerPrint() {
     updatePrintPreview();
+    const isInvitation = (printCurrentMode === 'invitation_general' || printCurrentMode === 'invitation_personal');
     const orientation = document.getElementById('print-schema-orientation')?.value;
-    if (printCurrentMode === 'schema' && orientation === 'landscape') {
-        document.body.classList.add('print-landscape-mode');
-    } else {
-        document.body.classList.remove('print-landscape-mode');
-    }
+    const isLandscape = isInvitation || (printCurrentMode === 'schema' && orientation === 'landscape');
+    
+    setPrintLandscape(isLandscape);
     window.print();
 }
 

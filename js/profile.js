@@ -40,6 +40,16 @@ function switchMainSubTab(subTabId) {
     lucide.createIcons();
 }
 
+function openEventSettings() {
+    if (typeof switchTab === 'function') switchTab('profile');
+    switchMainSubTab('profile');
+    setProfileEditMode(true);
+    const editModeEl = document.getElementById('profile-edit-mode');
+    if (editModeEl) {
+        editModeEl.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
 function setProfileEditMode(isEdit) {
     profileEditMode = isEdit;
     const viewModeEl = document.getElementById('profile-view-mode');
@@ -425,6 +435,11 @@ function renderMainInvitationCard() {
     }
     
     const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : 'Место проведения уточняется';
+    
+    let venueLink = p.venueLink ? p.venueLink.trim() : '';
+    if (!venueLink && venueText && venueText !== 'Место проведения уточняется') {
+        venueLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueText)}`;
+    }
 
     container.innerHTML = `
         <div class="invitation-border-luxury rounded-2xl md:rounded-3xl shadow-md text-center relative overflow-hidden bg-[#fffdfa] p-4 md:p-6 transition-all duration-300 hover:shadow-lg">
@@ -478,11 +493,23 @@ function renderMainInvitationCard() {
                             <span class="font-bold text-stone-900">${escapeHtml(timeText)}</span>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-base w-5 text-center shrink-0">📍</span>
+                    <div class="flex items-start gap-2.5 pt-1 border-t border-amber-200/70">
+                        <span class="text-base w-5 text-center shrink-0 mt-0.5">📍</span>
                         <div class="min-w-0 flex-1">
                             <span class="text-[10px] uppercase font-bold text-stone-400 block leading-tight">Место проведения</span>
-                            <span class="font-bold text-stone-900 block truncate">${escapeHtml(venueText)}</span>
+                            ${venueLink ? `
+                            <a href="${escapeHtml(venueLink)}" target="_blank" rel="noopener noreferrer" class="venue-pdf-link font-extrabold text-stone-900 hover:text-emerald-800 underline decoration-amber-500 decoration-2 underline-offset-2 block text-xs md:text-sm transition leading-snug" title="Нажмите, чтобы открыть место на карте">
+                                ${escapeHtml(venueText)} ↗
+                            </a>
+                            <div class="mt-1">
+                                <a href="${escapeHtml(venueLink)}" target="_blank" rel="noopener noreferrer" class="venue-pdf-link inline-flex items-center gap-1.5 bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-1 px-2.5 rounded-lg shadow-2xs text-[11px] transition active:scale-95 no-underline">
+                                    <span>🗺️ Открыть на карте (2ГИС / Maps)</span>
+                                    <svg class="w-3 h-3 inline-block text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </a>
+                            </div>
+                            ` : `
+                            <span class="font-bold text-stone-900 block">${escapeHtml(venueText)}</span>
+                            `}
                         </div>
                     </div>
                 </div>
@@ -496,6 +523,37 @@ function renderMainInvitationCard() {
         </div>
     `;
     lucide.createIcons();
+}
+
+async function downloadMainInvitationPhoto() {
+    const card = document.querySelector('#main-invitation-card-container .invitation-border-luxury');
+    if (!card) {
+        showToast('Карточка пригласительного не найдена');
+        return;
+    }
+    showToast('📸 Подготовка фото открытки...');
+    try {
+        const canvas = await html2canvas(card, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+        const img = canvas.toDataURL('image/png', 1.0);
+        const a = document.createElement('a');
+        const p = state.profile || {};
+        const title = (p.eventName || 'Пригласительное').replace(/[\\/:*?"<>|]/g, '_');
+        a.download = `Пригласительное_${title}.png`;
+        a.href = img;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('✅ Фото открытки успешно скачано!');
+    } catch (err) {
+        console.error('Ошибка сохранения фото:', err);
+        showToast('Не удалось сохранить фото');
+    }
 }
 
 function toggleMainInvitationSettings() {
@@ -648,34 +706,39 @@ function sendWhatsAppGeneralInvitation() {
     window.open(url, '_blank');
 }
 
-function sendWhatsAppGeneralInvitationPDF() {
-    // Открываем модальное окно печати общего бланка (А4)
+async function sendWhatsAppGeneralInvitationPDF() {
     if (typeof openPrintModal === 'function') {
         openPrintModal('invitation_general');
     }
 
-    const p = state.profile || {};
-    const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
-    const dateText = p.date ? formatDate(p.date) : '';
-    const timeText = p.timeStart ? `${p.timeStart}${p.timeEnd ? ` – ${p.timeEnd}` : ''}` : '';
-    const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : '';
-    const text = p.invitationText || (typeof invitationTemplates !== 'undefined' ? invitationTemplates.general : '');
+    showToast('📄 Формируем PDF «Пригласительное.pdf» с активной ссылкой на карту...');
 
-    let msg = `✨ *ПРИГЛАШЕНИЕ НА ТОРЖЕСТВО: ${eventTitle}* ✨\n\n`;
-    msg += `Дорогие друзья, родные и близкие!\n\n`;
-    msg += `${text}\n\n`;
-    if (dateText) msg += `📅 *Дата:* ${dateText}\n`;
-    if (timeText) msg += `🕒 *Время:* ${timeText}\n`;
-    if (venueText) msg += `📍 *Место:* ${venueText}\n`;
-    if (p.venueLink && p.venueLink.trim()) msg += `🗺️ *Карта 2ГИС:* ${p.venueLink.trim()}\n`;
-    msg += `\n📄 _Во вложении отправляю пригласительный билет (PDF)! Ждём вас!_ ✨`;
+    setTimeout(async () => {
+        if (typeof downloadCurrentInvitationPDF === 'function') {
+            await downloadCurrentInvitationPDF(null, 'Пригласительное.pdf');
+        }
 
-    showToast('Открыт бланк А4 для PDF. Нажмите «Распечатать / Сохранить в PDF»');
+        const p = state.profile || {};
+        const eventTitle = p.eventName && p.eventName.trim() ? p.eventName.trim() : 'Торжественное мероприятие';
+        const dateText = p.date ? formatDate(p.date) : '';
+        const timeText = p.timeStart ? `${p.timeStart}${p.timeEnd ? ` – ${p.timeEnd}` : ''}` : '';
+        const venueText = p.venueName && p.venueName.trim() ? p.venueName.trim() : '';
+        const text = p.invitationText || (typeof invitationTemplates !== 'undefined' ? invitationTemplates.general : '');
 
-    setTimeout(() => {
-        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
-        window.open(url, '_blank');
-    }, 600);
+        let msg = `✨ *ПРИГЛАШЕНИЕ НА ТОРЖЕСТВО: ${eventTitle}* ✨\n\n`;
+        msg += `Дорогие друзья, родные и близкие!\n\n`;
+        msg += `${text}\n\n`;
+        if (dateText) msg += `📅 *Дата:* ${dateText}\n`;
+        if (timeText) msg += `🕒 *Время:* ${timeText}\n`;
+        if (venueText) msg += `📍 *Место:* ${venueText}\n`;
+        if (p.venueLink && p.venueLink.trim()) msg += `🗺️ *Карта / 2ГИС:* ${p.venueLink.trim()}\n`;
+        msg += `\n📄 _(Файл «Пригласительное.pdf» сохранен — прикрепляю к сообщению)_ ✨`;
+
+        setTimeout(() => {
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }, 500);
+    }, 300);
 }
 
 
